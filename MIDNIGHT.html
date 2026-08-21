@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>미드나잇 관극 기록</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Noto+Serif+KR:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#0a0806; --bg2:#100c08; --raised:#171106; --raised2:#1e1710;
+  --ink:#ece3d0; --ink-dim:#b3a68c; --ink-faint:#82765f;
+  --gold:#c9a45c; --gold-bright:#e6c479; --gold-dim:#8a7038;
+  --blood:#a51f1f; --blood-bright:#c9302f;
+  --rule:#332a1c; --rule-soft:#241d13;
+  --ok:#4c9a6a; --warn:#c9962f; --err:#c0453f;
+  --shadow:0 12px 40px rgba(0,0,0,.55);
+  --serif:'Noto Serif KR',serif; --disp:'Cormorant Garamond',serif; --title:'Cinzel',serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1200px 700px at 50% -10%, #1a1206 0%, transparent 60%),
+    linear-gradient(180deg,#0b0805,#080604 60%);
+  color:var(--ink); font-family:var(--serif); line-height:1.55;
+  min-height:100vh; -webkit-font-smoothing:antialiased;
+}
+a{color:var(--gold)}
+button{font-family:var(--serif);cursor:pointer}
+input,select,textarea{font-family:var(--serif)}
+::selection{background:var(--blood);color:#fff}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px 90px}
+
+/* ---------- Header ---------- */
+header.top{text-align:center;padding:34px 16px 10px;position:relative}
+.antler{color:var(--gold);width:150px;height:66px;display:block;margin:0 auto 2px;opacity:.9;
+  filter:drop-shadow(0 2px 10px rgba(201,164,92,.25))}
+.wordmark{font-family:var(--title);font-weight:800;letter-spacing:.22em;
+  font-size:clamp(30px,6vw,54px);color:var(--ink);margin:0;
+  background:linear-gradient(180deg,#f6ecd6,#caa257 70%,#8a6f34);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.wordmark .m{color:var(--blood-bright);-webkit-text-fill-color:var(--blood-bright)}
+.subttl{font-family:var(--disp);font-style:italic;color:var(--ink-dim);letter-spacing:.28em;
+  font-size:14px;margin:2px 0 0;text-transform:uppercase}
+.hdr-meta{display:flex;justify-content:center;gap:26px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.counter{font-family:var(--disp);color:var(--gold)}
+.counter b{font-size:30px;font-weight:600;color:var(--gold-bright);font-family:var(--title)}
+.userchip{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-faint)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ink-faint);display:inline-block}
+.dot.ok{background:var(--ok)} .dot.syncing{background:var(--warn);animation:pulse 1s infinite}
+.dot.err{background:var(--err)} .dot.local{background:var(--gold-dim)}
+@keyframes pulse{50%{opacity:.35}}
+.hdr-meta .lk{cursor:pointer;color:var(--ink-faint);text-decoration:underline;text-underline-offset:3px}
+.hdr-meta .lk:hover{color:var(--gold)}
+
+/* ---------- Nav ---------- */
+nav.tabs{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;
+  border-top:1px solid var(--rule-soft);border-bottom:1px solid var(--rule-soft);
+  margin:18px 0 26px;padding:8px 0;position:sticky;top:0;z-index:30;
+  background:linear-gradient(180deg,rgba(10,8,5,.96),rgba(10,8,5,.86));backdrop-filter:blur(6px)}
+.tab{background:none;border:1px solid transparent;color:var(--ink-faint);
+  padding:8px 15px;border-radius:8px;font-size:14px;letter-spacing:.02em;transition:.15s}
+.tab .en{font-family:var(--disp);font-style:italic;font-size:11px;display:block;letter-spacing:.14em;opacity:.7}
+.tab:hover{color:var(--ink);background:var(--raised)}
+.tab.active{color:var(--gold-bright);border-color:var(--gold-dim);background:var(--raised2)}
+.page{display:none;animation:fade .25s}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}}
+
+/* ---------- Cards / generic ---------- */
+.card{background:linear-gradient(180deg,var(--raised2),var(--raised));border:1px solid var(--rule);
+  border-radius:14px;padding:20px;box-shadow:var(--shadow)}
+h2.sec{font-family:var(--disp);font-style:italic;font-weight:600;color:var(--gold);
+  font-size:24px;margin:0 0 14px;letter-spacing:.02em}
+h3.sub{font-family:var(--disp);font-style:italic;color:var(--ink-dim);font-size:17px;
+  margin:20px 0 10px;letter-spacing:.04em;border-bottom:1px solid var(--rule-soft);padding-bottom:6px}
+label.fld{display:block;margin:0 0 12px;font-size:12px;color:var(--ink-dim);letter-spacing:.05em}
+label.fld > span.lbl{display:block;margin-bottom:5px;text-transform:uppercase;font-size:11px;letter-spacing:.12em}
+input[type=text],input[type=date],input[type=number],input:not([type]),select,textarea{
+  width:100%;background:var(--bg2);border:1px solid var(--rule);color:var(--ink);
+  padding:9px 11px;border-radius:8px;font-size:14.5px;outline:none;transition:.15s}
+input:focus,select:focus,textarea:focus{border-color:var(--gold-dim);background:#120d07}
+textarea{resize:vertical;min-height:60px;line-height:1.6}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--gold-dim) 50%),linear-gradient(135deg,var(--gold-dim) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 16px,calc(100% - 11px) 16px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:30px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 12px}
+.hint{font-size:12px;color:var(--ink-faint);margin:-6px 0 12px;font-style:italic}
+.hint.warn{color:var(--warn)}
+.hint.auto{color:var(--gold-dim)}
+.sched-box{background:rgba(201,164,92,.07);border:1px solid var(--rule);border-radius:8px;padding:8px 10px;margin:-4px 0 12px;font-size:12px;color:var(--ink-dim)}
+.sched-box .lbl2{color:var(--gold);font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+.sched-box button{margin:3px 4px 0 0}
+
+/* buttons */
+.btn{border:1px solid var(--rule);background:var(--raised2);color:var(--ink);
+  padding:10px 18px;border-radius:9px;font-size:14px;letter-spacing:.03em;transition:.15s}
+.btn:hover{border-color:var(--gold-dim);color:var(--gold-bright)}
+.btn-primary{background:linear-gradient(180deg,#b6863b,#8a6222);border:1px solid var(--gold-dim);
+  color:#1a1206;font-weight:600;text-shadow:0 1px 0 rgba(255,255,255,.15)}
+.btn-primary:hover{background:linear-gradient(180deg,#cf9d4b,#9c722c);color:#120c04}
+.btn-danger{color:var(--blood-bright);border-color:#4a2020}
+.btn-danger:hover{background:#2a1211;border-color:var(--blood)}
+.btn-sm{padding:5px 11px;font-size:12.5px;border-radius:7px}
+.row-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+
+/* ---------- Record layout ---------- */
+.rec-grid{display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:22px;align-items:start}
+.rec-grid .form-card{position:sticky;top:74px}
+@media(max-width:840px){.rec-grid{grid-template-columns:1fr}.rec-grid .form-card{position:static}}
+
+/* casting */
+.cast-grid{display:flex;flex-direction:column;gap:12px}
+.cast-cell{background:var(--bg2);border:1px solid var(--rule);border-radius:10px;padding:11px 12px}
+.cast-cell .rolehd{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.cast-cell .rolehd .rn{color:var(--gold);font-family:var(--disp);font-style:italic;font-size:16px}
+.cast-cell .rolehd .rn small{color:var(--ink-faint);font-style:normal;font-size:11px;margin-left:6px;letter-spacing:.1em}
+.slotrow{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.slotrow input{flex:1}
+.slot-x{background:none;border:none;color:var(--ink-faint);font-size:16px;padding:2px 6px}
+.slot-x:hover{color:var(--blood-bright)}
+.addslot{background:none;border:1px dashed var(--rule);color:var(--ink-faint);border-radius:7px;
+  padding:4px 10px;font-size:12px;width:100%}
+.addslot:hover{border-color:var(--gold-dim);color:var(--gold)}
+.seasoncast-hint{font-size:11px;color:var(--gold-dim);margin-top:4px;font-style:italic}
+
+/* ---------- Hexagon rating ---------- */
+.rating-wrap{display:grid;grid-template-columns:1fr 210px;gap:18px;align-items:center}
+@media(max-width:520px){.rating-wrap{grid-template-columns:1fr}}
+.sliders{display:flex;flex-direction:column;gap:9px}
+.slrow{display:grid;grid-template-columns:74px 1fr 24px;align-items:center;gap:9px}
+.slrow .axl{font-size:13px;color:var(--ink-dim)}
+.slrow .axv{font-family:var(--title);color:var(--gold-bright);font-size:15px;text-align:right}
+input[type=range]{-webkit-appearance:none;appearance:none;height:4px;background:var(--rule);border-radius:3px;padding:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+  background:var(--gold);border:2px solid #23190a;cursor:pointer;box-shadow:0 0 6px rgba(201,164,92,.5)}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--gold);border:2px solid #23190a;cursor:pointer}
+.hexbox{display:flex;flex-direction:column;align-items:center}
+.hexbox .avg{font-family:var(--title);color:var(--gold-bright);font-size:20px;margin-top:2px}
+.hexbox .avg small{color:var(--ink-faint);font-size:11px;font-family:var(--serif)}
+
+/* images */
+.img-strip{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
+.thumb{position:relative;width:78px;height:78px;border-radius:8px;overflow:hidden;border:1px solid var(--rule);background:var(--bg2)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .rm{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.7);color:#fff;border:none;
+  border-radius:50%;width:20px;height:20px;font-size:13px;line-height:1;cursor:pointer}
+.thumb .kd{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);font-size:9px;text-align:center;color:var(--gold);padding:1px}
+.filebtn{display:inline-block;border:1px dashed var(--rule);border-radius:8px;padding:9px 14px;
+  color:var(--ink-dim);font-size:13px;text-align:center;width:100%}
+.filebtn:hover{border-color:var(--gold-dim);color:var(--gold)}
+
+.check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-dim);margin:14px 0 4px}
+.check input{width:auto}
+
+/* ---------- Viewings list ---------- */
+.list-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.list-controls input,.list-controls select{width:auto;min-width:130px}
+.list-controls .grow{flex:1;min-width:180px}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.vcard{background:linear-gradient(180deg,var(--raised2),var(--raised));border:1px solid var(--rule);
+  border-radius:13px;padding:15px 16px;cursor:pointer;transition:.15s;position:relative;overflow:hidden}
+.vcard:hover{border-color:var(--gold-dim);transform:translateY(-2px);box-shadow:var(--shadow)}
+.vcard .vtop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.vcard .vdate{font-family:var(--title);font-size:17px;color:var(--ink)}
+.vcard .vday{font-size:11px;color:var(--ink-faint);margin-left:6px}
+.badge{display:inline-block;font-size:10.5px;letter-spacing:.08em;padding:2px 8px;border-radius:20px;
+  border:1px solid var(--rule);color:var(--ink-dim);margin-right:5px;text-transform:uppercase;font-family:var(--disp);font-style:italic}
+.badge.antlers{border-color:var(--gold-dim);color:var(--gold)}
+.badge.actormusician{border-color:#5a2424;color:var(--blood-bright)}
+.badge.sess{border-color:var(--rule);color:var(--ink-faint)}
+.vcast{font-size:13.5px;color:var(--ink-dim);margin:10px 0 6px;line-height:1.7}
+.vcast b{color:var(--ink);font-weight:400}
+.vcast .rl{color:var(--ink-faint);font-size:11px}
+.voneliner{font-family:var(--disp);font-style:italic;font-size:14.5px;color:var(--gold);margin:6px 0}
+.vfoot{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.vmini{flex-shrink:0}
+.vthumb{width:46px;height:46px;border-radius:6px;object-fit:cover;border:1px solid var(--rule)}
+.nreview{position:absolute;top:0;right:0;background:var(--warn);color:#1a1206;font-size:9px;
+  padding:2px 9px;border-bottom-left-radius:8px;letter-spacing:.06em}
+.empty{text-align:center;color:var(--ink-faint);padding:50px 20px;font-style:italic;font-family:var(--disp);font-size:18px}
+
+/* calendar */
+.cal{max-width:520px;margin:0 auto 22px}
+.cal-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.cal-hd b{font-family:var(--title);font-size:17px;color:var(--gold)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-grid .dow{text-align:center;font-size:11px;color:var(--ink-faint);padding:4px 0}
+.cal-cell{aspect-ratio:1;border:1px solid var(--rule-soft);border-radius:7px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;font-size:12px;color:var(--ink-dim);position:relative}
+.cal-cell.has{border-color:var(--gold-dim);background:var(--raised2);cursor:pointer;color:var(--ink)}
+.cal-cell.has:hover{background:var(--raised)}
+.cal-cell .cdot{width:5px;height:5px;border-radius:50%;background:var(--gold);margin-top:2px}
+.cal-cell.run{background:rgba(201,164,92,.06)}
+
+/* ---------- Stats ---------- */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.kpi{text-align:center;padding:22px 14px}
+.kpi .n{font-family:var(--title);font-size:34px;color:var(--gold-bright);line-height:1}
+.kpi .l{font-size:12px;color:var(--ink-dim);margin-top:7px;letter-spacing:.05em}
+.bar-row{display:grid;grid-template-columns:120px 1fr 42px;align-items:center;gap:10px;margin-bottom:8px;font-size:13px}
+.bar-row .bn{color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{background:var(--bg2);border-radius:5px;height:16px;overflow:hidden;border:1px solid var(--rule-soft)}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));border-radius:5px}
+.bar-fill.blood{background:linear-gradient(90deg,#6a1c1c,var(--blood-bright))}
+.bar-row .bv{text-align:right;color:var(--gold);font-family:var(--title);font-size:13px}
+
+/* actors */
+.actor-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.actor-item{background:var(--bg2);border:1px solid var(--rule);border-radius:10px;padding:12px 14px;cursor:pointer;transition:.15s}
+.actor-item:hover{border-color:var(--gold-dim)}
+.actor-item .an{color:var(--ink);font-size:15px}
+.actor-item .am{font-size:11.5px;color:var(--ink-faint);margin-top:3px}
+.actor-item .ac{color:var(--gold-bright);font-family:var(--title);float:right}
+
+/* timeline */
+.tl-edition{margin-bottom:26px}
+.tl-edition > h3{font-family:var(--disp);font-style:italic;font-size:22px;margin:0 0 12px;padding-bottom:6px;border-bottom:1px solid var(--rule)}
+.tl-edition.antlers > h3{color:var(--gold)} .tl-edition.actormusician > h3{color:var(--blood-bright)}
+.tl-item{display:grid;grid-template-columns:130px 1fr auto;gap:14px;align-items:center;
+  padding:11px 14px;border:1px solid var(--rule-soft);border-radius:10px;margin-bottom:8px;background:var(--raised);cursor:pointer;transition:.15s}
+.tl-item:hover{border-color:var(--gold-dim)}
+.tl-item .tn{font-family:var(--disp);font-style:italic;font-size:17px;color:var(--ink)}
+.tl-item .td{font-size:12px;color:var(--ink-faint)}
+.tl-item .tc{font-family:var(--title);color:var(--gold-bright);font-size:16px}
+.tl-item .tc small{font-family:var(--serif);color:var(--ink-faint);font-size:11px}
+.tl-cancel{color:var(--blood-bright);font-size:11px;font-style:italic}
+
+/* ---------- Settings ---------- */
+.set-block{margin-bottom:26px}
+.editor-list{display:flex;flex-direction:column;gap:8px}
+.editrow{display:flex;gap:8px;align-items:center;background:var(--bg2);border:1px solid var(--rule);border-radius:9px;padding:8px 10px}
+.editrow input{flex:1}
+.editrow .mv{background:none;border:1px solid var(--rule);color:var(--ink-faint);border-radius:6px;padding:3px 8px;font-size:12px}
+
+/* ---------- Auth overlay ---------- */
+.overlay{position:fixed;inset:0;background:rgba(6,4,3,.92);backdrop-filter:blur(5px);z-index:100;
+  display:none;align-items:center;justify-content:center;padding:20px}
+.overlay.show{display:flex}
+.auth-card{max-width:380px;width:100%;text-align:center}
+.auth-card .antler{width:120px}
+.auth-card h1{font-family:var(--title);letter-spacing:.2em;font-size:26px;margin:6px 0 2px}
+.auth-card p{color:var(--ink-faint);font-size:13px;margin:0 0 20px;font-style:italic;font-family:var(--disp)}
+.auth-card input{margin-bottom:11px;text-align:center}
+.auth-toggle{margin-top:14px;font-size:12.5px;color:var(--ink-faint)}
+.auth-toggle a{cursor:pointer}
+.auth-err{color:var(--blood-bright);font-size:12.5px;min-height:18px;margin-top:8px}
+
+/* ---------- Detail modal ---------- */
+.modal{position:fixed;inset:0;background:rgba(6,4,3,.8);z-index:90;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+.modal.show{display:flex}
+.modal-card{max-width:620px;width:100%;position:relative}
+.modal-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--ink-faint);font-size:26px;line-height:1}
+.modal-close:hover{color:var(--blood-bright)}
+.det-hero{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.det-cast{margin:14px 0;font-size:15px;line-height:2}
+.det-review{white-space:pre-wrap;background:var(--bg2);border:1px solid var(--rule-soft);border-radius:9px;padding:14px;margin-top:12px;line-height:1.75;color:var(--ink-dim)}
+.det-imgs{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.det-imgs img{max-width:180px;border-radius:9px;border:1px solid var(--rule);cursor:zoom-in}
+.det-meta{display:flex;gap:16px;flex-wrap:wrap;color:var(--ink-faint);font-size:12.5px;margin-top:10px}
+.det-meta b{color:var(--ink-dim);font-weight:400}
+
+/* toast */
+#toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--raised2);border:1px solid var(--gold-dim);color:var(--ink);padding:11px 22px;
+  border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:200;box-shadow:var(--shadow)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* schedule tab */
+.seg{display:inline-flex;gap:4px}
+.sch-list{display:flex;flex-direction:column;gap:7px}
+.sch-row{display:grid;grid-template-columns:210px 150px 1fr;gap:12px;align-items:center;background:var(--raised);border:1px solid var(--rule-soft);border-radius:9px;padding:9px 13px;font-size:13px}
+.sch-row.seen{border-color:var(--gold-dim);background:var(--raised2)}
+.sch-dt b{font-family:var(--title);color:var(--ink);font-size:14px}
+.sch-cast{color:var(--ink-dim);line-height:1.65}
+.sch-cast .rl{color:var(--ink-faint);font-size:11px}
+.sch-cast b{color:var(--ink);font-weight:400}
+.seen-badge{background:var(--gold-dim);color:#1a1206;font-size:10px;padding:1px 7px;border-radius:10px;margin-left:5px}
+.sch-count{color:var(--ink-faint);font-size:12.5px;margin-bottom:12px;font-style:italic}
+@media(max-width:700px){.sch-row{grid-template-columns:1fr;gap:4px}}
+.localbanner{text-align:center;font-size:12px;color:var(--gold-dim);background:rgba(138,112,56,.08);
+  border:1px solid var(--rule-soft);border-radius:8px;padding:6px;margin:0 0 18px;font-style:italic;display:none}
+</style>
+</head>
+<body>
+
+<!-- SVG antler definition reused -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <g id="antlerdef">
+    <g fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M100 64 C 100 50 103 40 110 31 C 116 23 121 16 122 7"/>
+      <path d="M110 31 C 118 27 126 27 134 22"/>
+      <path d="M115 23 C 123 20 131 20 138 14"/>
+      <path d="M106 40 C 113 38 121 39 128 43"/>
+      <g transform="translate(200,0) scale(-1,1)">
+        <path d="M100 64 C 100 50 103 40 110 31 C 116 23 121 16 122 7"/>
+        <path d="M110 31 C 118 27 126 27 134 22"/>
+        <path d="M115 23 C 123 20 131 20 138 14"/>
+        <path d="M106 40 C 113 38 121 39 128 43"/>
+      </g>
+      <circle cx="100" cy="66" r="2.4" fill="currentColor" stroke="none"/>
+    </g>
+  </g>
+</defs></svg>
+
+<div class="wrap">
+  <header class="top">
+    <svg class="antler" viewBox="0 0 200 70"><use href="#antlerdef"/></svg>
+    <h1 class="wordmark">MID<span class="m">N</span>IGHT</h1>
+    <p class="subttl">관극 기록 · The Midnight Log</p>
+    <div class="hdr-meta">
+      <div class="counter"><b id="totalCount">0</b> 회 관극</div>
+      <div class="userchip"><span class="dot" id="syncDot"></span><span id="userLabel">로컬 모드</span></div>
+      <span class="lk" id="signOutLink" style="display:none">로그아웃</span>
+    </div>
+  </header>
+
+  <div class="localbanner" id="localBanner">로컬 전용 모드로 실행 중입니다 — 클라우드 동기화를 쓰려면 상단 스크립트에 Supabase URL/Key 를 입력하세요.</div>
+
+  <nav class="tabs">
+    <button class="tab active" data-page="record">기록하기<span class="en">Record</span></button>
+    <button class="tab" data-page="viewings">관극목록<span class="en">Viewings</span></button>
+    <button class="tab" data-page="stats">통계<span class="en">Statistics</span></button>
+    <button class="tab" data-page="actors">배우별<span class="en">By Actor</span></button>
+    <button class="tab" data-page="timeline">시즌 연혁<span class="en">Timeline</span></button>
+    <button class="tab" data-page="schedule">공연 회차<span class="en">Schedule</span></button>
+    <button class="tab" data-page="settings">설정·데이터<span class="en">Settings</span></button>
+  </nav>
+
+  <!-- ============ RECORD ============ -->
+  <section id="page-record" class="page active">
+    <div class="rec-grid">
+      <div class="card form-card">
+        <h2 class="sec" id="recTitle">새 관극 기록</h2>
+        <label class="fld"><span class="lbl">회차 선택</span>
+          <select id="f-existing"><option value="">+ 신규 기록</option></select></label>
+        <div class="grid2">
+          <label class="fld"><span class="lbl">관극일</span><input type="date" id="f-date"></label>
+          <label class="fld"><span class="lbl">회차 / 시간</span>
+            <select id="f-session"><option value="">—</option><option>마티네</option><option>이브닝</option><option>단독</option></select></label>
+        </div>
+        <div class="grid2">
+          <label class="fld"><span class="lbl">버전</span><select id="f-edition"></select></label>
+          <label class="fld"><span class="lbl">시즌</span><select id="f-season"></select></label>
+        </div>
+        <div class="hint" id="f-season-hint"></div>
+        <div id="f-sched" class="sched-box" style="display:none"></div>
+        <div class="grid2">
+          <label class="fld"><span class="lbl">극장</span><input type="text" id="f-theater" list="dl-theaters" placeholder="NOL 유니플렉스 1관"></label>
+          <label class="fld"><span class="lbl">좌석</span><input type="text" id="f-seat" list="dl-seats" placeholder="1층 R열 12"></label>
+        </div>
+        <div class="grid2">
+          <label class="fld"><span class="lbl">가격 (₩)</span><input type="number" id="f-price" placeholder="66000"></label>
+          <label class="fld"><span class="lbl">시간(선택)</span><input type="text" id="f-time" placeholder="14:00"></label>
+        </div>
+        <label class="fld"><span class="lbl">관크 · 시야 / 좌석평</span><input type="text" id="f-sightline" placeholder="1층 5열, 표정까지 잘 보임"></label>
+        <label class="check"><input type="checkbox" id="f-needsreview"> 검수 필요 (시딩/미확정 캐스팅)</label>
+        <div class="row-actions">
+          <button class="btn btn-primary" id="f-save">기록 보존하기</button>
+          <button class="btn" id="f-clear">비우기</button>
+          <button class="btn btn-danger" id="f-delete" style="display:none">삭제</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="sub" style="margin-top:0">캐스팅 · Cast</h3>
+        <div class="cast-grid" id="f-casting"></div>
+
+        <h3 class="sub">평가 · 6각형</h3>
+        <div class="rating-wrap">
+          <div class="sliders" id="f-sliders"></div>
+          <div class="hexbox">
+            <svg id="f-hexagon" viewBox="0 0 200 200" width="200" height="200"></svg>
+            <div class="avg"><span id="f-avg">–</span><small> / 5</small></div>
+          </div>
+        </div>
+
+        <h3 class="sub">관람후기 · Review</h3>
+        <label class="fld"><span class="lbl">한줄평</span><input type="text" id="f-oneliner" maxlength="90" placeholder="한 줄로 남기는 감상"></label>
+        <label class="fld"><span class="lbl">관람후기</span><textarea id="f-review" rows="7" placeholder="그날의 공연, 캐스팅, 인상 깊었던 순간…"></textarea></label>
+
+        <h3 class="sub">사진 · 티켓</h3>
+        <label class="filebtn" for="f-images">＋ 이미지 추가 (티켓·포스터·인증샷)</label>
+        <input type="file" id="f-images" accept="image/*" multiple style="display:none">
+        <div class="img-strip" id="f-image-strip"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VIEWINGS ============ -->
+  <section id="page-viewings" class="page">
+    <div class="list-controls">
+      <input type="text" id="v-search" class="grow" placeholder="배우 · 극장 · 후기 검색…">
+      <select id="v-edition"><option value="">모든 버전</option></select>
+      <select id="v-season"><option value="">모든 시즌</option></select>
+      <select id="v-sort"><option value="date-desc">최신순</option><option value="date-asc">오래된순</option><option value="rating-desc">평점 높은순</option></select>
+      <button class="btn btn-sm" id="v-calbtn">달력 보기</button>
+      <button class="btn btn-sm" id="v-nrbtn">검수 필요만</button>
+    </div>
+    <div class="cal card" id="v-calendar" style="display:none"></div>
+    <div id="v-active-filter" class="hint" style="display:none"></div>
+    <div class="vgrid" id="v-grid"></div>
+  </section>
+
+  <!-- ============ STATS ============ -->
+  <section id="page-stats" class="page">
+    <div id="stats-body"></div>
+  </section>
+
+  <!-- ============ ACTORS ============ -->
+  <section id="page-actors" class="page">
+    <div class="list-controls">
+      <input type="text" id="a-search" class="grow" placeholder="배우 검색…">
+      <select id="a-role"><option value="">모든 배역</option></select>
+    </div>
+    <div id="actors-body"></div>
+  </section>
+
+  <!-- ============ TIMELINE ============ -->
+  <section id="page-timeline" class="page">
+    <div id="timeline-body"></div>
+  </section>
+
+  <!-- ============ SCHEDULE (공연 회차·전체 캐스팅) ============ -->
+  <section id="page-schedule" class="page">
+    <div id="schedule-body"></div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section id="page-settings" class="page">
+    <div id="settings-body"></div>
+  </section>
+</div>
+
+<!-- datalists -->
+<datalist id="dl-theaters"></datalist>
+<datalist id="dl-seats"></datalist>
+
+<!-- auth overlay -->
+<div class="overlay" id="authOverlay">
+  <div class="card auth-card">
+    <svg class="antler" viewBox="0 0 200 70"><use href="#antlerdef"/></svg>
+    <h1>MIDNIGHT</h1>
+    <p>관극 기록에 입장하려면 로그인하세요</p>
+    <input type="email" id="au-email" placeholder="이메일" autocomplete="email">
+    <input type="password" id="au-pw" placeholder="비밀번호" autocomplete="current-password">
+    <button class="btn btn-primary" id="au-submit" style="width:100%">로그인</button>
+    <div class="auth-err" id="au-err"></div>
+    <div class="auth-toggle" id="au-toggle">계정이 없으신가요? <a>회원가입</a></div>
+    <div class="auth-toggle"><a id="au-local">로컬 모드로 계속 (클라우드 없이 이 기기에만)</a></div>
+  </div>
+</div>
+
+<!-- detail modal -->
+<div class="modal" id="detailModal"><div class="card modal-card" id="detailCard"></div></div>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   미드나잇 관극 기록 — MIDNIGHT.html
+   단일 HTML · 바닐라 JS · Supabase(선택) · localStorage
+   ============================================================ */
+
+/* ---------- Supabase 설정 (여기에 값을 입력하면 클라우드 동기화 활성화) ---------- */
+const SUPABASE_URL      = 'https://qgsulymisxtqiglzydkb.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_IefAtPanIRB5JKJc6aGnKw_XhA7WRro';
+const SUPABASE_ENABLED  = !!(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase);
+let sb = SUPABASE_ENABLED ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY,
+          { auth:{ persistSession:true, autoRefreshToken:true } }) : null;
+let currentUser = null;
+
+const STORAGE_KEY = 'midnight_tracker_v1';
+const PUSH_KEY    = 'midnight_pushqueue_v1';
+const BUCKET      = 'viewing-images';
+
+const RATING_AXES = [
+  { key:'sound',     name:'음향' },
+  { key:'casting',   name:'캐스팅' },
+  { key:'direction', name:'연출' },
+  { key:'adlib',     name:'애드립' },
+  { key:'seat',      name:'좌석' },
+  { key:'manners',   name:'관객매너' }
+];
+
+/* ---------- SEED: 역할 / 버전 / 시즌 ---------- */
+const SEED_VERSION = 2; // 시즌 메타(극장/포지션) 강제 갱신 마이그레이션 버전
+
+const SEED_ROLES = [ // 고정 리드 3역. 플레이어는 시즌별 포지션(SEASON_POSITIONS)으로 관리.
+  { id:'man',     name:'맨',     nameEn:'Man',     sortIdx:0, actors:[] },
+  { id:'woman',   name:'우먼',   nameEn:'Woman',   sortIdx:1, actors:[] },
+  { id:'visitor', name:'비지터', nameEn:'Visitor', sortIdx:2, actors:[] }
+];
+
+const SEED_EDITIONS = [
+  { id:'antlers',       name:'앤틀러스',   nameEn:'Antlers',        defaultTheater:'', accent:'gold',  sortIdx:0 },
+  { id:'actormusician', name:'액터뮤지션', nameEn:'Actor-Musician', defaultTheater:'', accent:'blood', sortIdx:1 }
+];
+
+/* 플레이어 포지션 표준 라벨(통계/카드/CSV 공통). 시즌별 표시 라벨은 SEASON_POSITIONS 참조. */
+const POSITION_DEFS = [
+  { key:'perc',   name:'퍼커션',       multi:false },
+  { key:'violin', name:'바이올린',     multi:false },
+  { key:'guitar', name:'기타',         multi:false },
+  { key:'bass',   name:'콘트라베이스', multi:false },
+  { key:'piano',  name:'피아노',       multi:false },
+  { key:'multi',  name:'멀티플레이어', multi:true }
+];
+const CAST_KEY_ORDER = ['man','woman','visitor','perc','violin','guitar','bass','piano','multi'];
+
+/* 액터뮤지션 포지션 라벨 스킴: 초/재/삼연=악기명, 사연~=플레이어번호 */
+const AM_INSTRUMENT = [['perc','퍼커션'],['guitar','기타'],['violin','바이올린'],['bass','콘트라베이스'],['piano','피아노']];
+const AM_PLAYER     = [['perc','플레이어1 (퍼커션)'],['violin','플레이어2 (바이올린)'],['guitar','플레이어3 (기타·퍼커션)'],['bass','플레이어4 (콘트라베이스)'],['piano','피아니스트']];
+function amPos(scheme, casts){ return scheme.map(([key,label])=>({ key, label, multi:false, cast:(casts[key]||[]).slice() })); }
+function multiPos(label, cast){ return [{ key:'multi', label, multi:true, cast:cast.slice() }]; }
+
+/* 시즌별 플레이어 포지션(사용자 제공 정본). 앤틀러스=멀티플레이어(다중), 액터뮤지션=악기/플레이어(각 1인). */
+const SEASON_POSITIONS = {
+  antlers_1: multiPos('멀티플레이어', ['박주희','도정연']),
+  antlers_2: multiPos('멀티플레이어', ['김미로','신동민']),
+  antlers_3: multiPos('멀티플레이어', ['이선','이미주','정종환','방가희']),
+  antlers_4: multiPos('멀티플레이어', ['강대운','정종환','송정은','방가희']),
+  am_1: amPos(AM_INSTRUMENT, { perc:['김사라'], guitar:['김소년'], violin:['이나래'], bass:['신지국'], piano:['오성민','이범재'] }),
+  am_2: amPos(AM_INSTRUMENT, { perc:['남궁혜인','이다경'], guitar:['김소년','김지훈'], violin:['손산','이나래'], bass:['지선도','최승규'], piano:['오성민','조재철'] }),
+  am_3: amPos(AM_INSTRUMENT, { perc:['김경민','박선영'], guitar:['김문학','최윤호'], violin:['박신애','고예일','이나래'], bass:['김동현','김병무'], piano:['양찬영','조재철','김동빈'] }),
+  am_4: amPos(AM_PLAYER, { perc:['도율희','김혜미','장보람','박선영','오윤진'], violin:['고예일','김에스더','정혜원','허유진','백지나에스더'], guitar:['남민우','정민석','홍성원','강대운','김민서'], bass:['김병무','권혁준','김수종','황지성'], piano:['조재철','김인애','이정수','박지훈'] }),
+  am_encore_theday: amPos(AM_PLAYER, { perc:['도율희','박선영','장보람','오윤진'], violin:['허유진','정혜원','백지나에스더','김에스더'], guitar:['강대운','남민우','홍성원','정민석','김민서'], bass:['권혁준','황지성','김수종'], piano:['김인애','조재철','박지훈','이정수'] }),
+  am_5: amPos(AM_PLAYER, { perc:['양성령','박혜민'], violin:['허유진','정우림'], guitar:['강대운','한희도'], bass:['권혁준','황지성'], piano:['조재철','김병준'] }),
+  am_6: amPos(AM_PLAYER, { perc:['송정은','선주연'], violin:['설다혜','장주희'], guitar:['김민성','김우성'], bass:['최규식','남수현'], piano:['조재철','김동빈'] }),
+  am_7: amPos(AM_PLAYER, { perc:['송정은','박혜민'], violin:['설다혜','김에스더'], guitar:['강대운','강현동'], bass:['김준','남수현'], piano:['조재철','오령준','전현우'] }),
+  am_encore_thechoice: amPos(AM_PLAYER, { perc:['김솔','양정현'], violin:['김소진','정우림'], guitar:['강현동','박영훈'], bass:['김준','신은규'], piano:['조재철','임지은','전현우'] })
+};
+
+/* 회차별 캐스팅 스케줄(공식 예매처 표에서 판독) — gen_schedule.py 로 생성/주입. 각 항목 {d:date,t:time,s:seasonId,c:{roleKey:배우}} */
+const SCHEDULE_SEED = [{d:'2023-01-31',t:'20:00',s:'antlers_3',c:{visitor:'고상호',man:'정욱진',woman:'전성민',multi:'이선, 이미주'}},{d:'2023-02-01',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'류제윤',woman:'김수',multi:'정종환, 방가희'}},{d:'2023-02-02',t:'20:00',s:'antlers_3',c:{visitor:'김려원',man:'노희찬',woman:'정우연',multi:'정종환, 이미주'}},{d:'2023-02-03',t:'20:00',s:'antlers_3',c:{visitor:'김려원',man:'류제윤',woman:'전성민',multi:'이선, 방가희'}},{d:'2023-02-04',t:'15:00',s:'antlers_3',c:{visitor:'고상호',man:'노희찬',woman:'정우연',multi:'정종환, 이미주'}},{d:'2023-02-04',t:'18:30',s:'antlers_3',c:{visitor:'고상호',man:'류제윤',woman:'김수',multi:'정종환, 이미주'}},{d:'2023-02-05',t:'15:00',s:'antlers_3',c:{visitor:'박민성',man:'정욱진',woman:'전성민',multi:'이선, 방가희'}},{d:'2023-02-05',t:'18:30',s:'antlers_3',c:{visitor:'김려원',man:'정욱진',woman:'정우연',multi:'이선, 방가희'}},{d:'2023-02-07',t:'20:00',s:'antlers_3',c:{visitor:'고상호',man:'류제윤',woman:'정우연',multi:'이선, 이미주'}},{d:'2023-02-08',t:'20:00',s:'antlers_3',c:{visitor:'김려원',man:'정욱진',woman:'전성민',multi:'정종환, 방가희'}},{d:'2023-02-09',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'노희찬',woman:'김수',multi:'이선, 방가희'}},{d:'2023-02-10',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'류제윤',woman:'전성민',multi:'정종환, 이미주'}},{d:'2023-02-11',t:'15:00',s:'antlers_3',c:{visitor:'김려원',man:'정욱진',woman:'정우연',multi:'이선, 방가희'}},{d:'2023-02-11',t:'18:30',s:'antlers_3',c:{visitor:'박민성',man:'정욱진',woman:'김수',multi:'이선, 방가희'}},{d:'2023-02-12',t:'15:00',s:'antlers_3',c:{visitor:'고상호',man:'류제윤',woman:'전성민',multi:'정종환, 이미주'}},{d:'2023-02-12',t:'18:30',s:'antlers_3',c:{visitor:'고상호',man:'노희찬',woman:'정우연',multi:'정종환, 이미주'}},{d:'2023-02-14',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'정욱진',woman:'전성민',multi:'이선, 방가희'}},{d:'2023-02-15',t:'20:00',s:'antlers_3',c:{visitor:'고상호',man:'노희찬',woman:'김수',multi:'정종환, 이미주'}},{d:'2023-02-16',t:'20:00',s:'antlers_3',c:{visitor:'김려원',man:'류제윤',woman:'정우연',multi:'정종환, 방가희'}},{d:'2023-02-17',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'노희찬',woman:'전성민',multi:'이선, 이미주'}},{d:'2023-02-18',t:'15:00',s:'antlers_3',c:{visitor:'김려원',man:'정욱진',woman:'김수',multi:'정종환, 방가희'}},{d:'2023-02-18',t:'18:30',s:'antlers_3',c:{visitor:'고상호',man:'정욱진',woman:'전성민',multi:'정종환, 방가희'}},{d:'2023-02-19',t:'15:00',s:'antlers_3',c:{visitor:'박민성',man:'류제윤',woman:'정우연',multi:'이선, 이미주'}},{d:'2023-02-19',t:'18:30',s:'antlers_3',c:{visitor:'김려원',man:'류제윤',woman:'김수',multi:'이선, 이미주'}},{d:'2023-02-21',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'류제윤',woman:'정우연',multi:'이선, 방가희'}},{d:'2023-02-22',t:'20:00',s:'antlers_3',c:{visitor:'고상호',man:'정욱진',woman:'김수',multi:'정종환, 이미주'}},{d:'2023-02-23',t:'20:00',s:'antlers_3',c:{visitor:'김려원',man:'노희찬',woman:'전성민',multi:'이선, 이미주'}},{d:'2023-02-24',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'정욱진',woman:'정우연',multi:'정종환, 방가희'}},{d:'2023-02-25',t:'15:00',s:'antlers_3',c:{visitor:'김려원',man:'노희찬',woman:'김수',multi:'이선, 이미주'}},{d:'2023-02-25',t:'18:30',s:'antlers_3',c:{visitor:'고상호',man:'정욱진',woman:'전성민',multi:'정종환, 방가희'}},{d:'2023-02-26',t:'15:00',s:'antlers_3',c:{visitor:'김려원',man:'노희찬',woman:'정우연',multi:'정종환, 방가희'}},{d:'2023-02-26',t:'18:30',s:'antlers_3',c:{visitor:'박민성',man:'류제윤',woman:'김수',multi:'정종환, 방가희'}},{d:'2023-02-28',t:'20:00',s:'antlers_3',c:{visitor:'김려원',man:'정욱진',woman:'전성민',multi:'이선, 방가희'}},{d:'2023-03-01',t:'15:00',s:'antlers_3',c:{visitor:'고상호',man:'노희찬',woman:'김수',multi:'정종환, 이미주'}},{d:'2023-03-01',t:'18:30',s:'antlers_3',c:{visitor:'고상호',man:'류제윤',woman:'정우연',multi:'정종환, 이미주'}},{d:'2023-03-02',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'정욱진',woman:'김수',multi:'이선, 방가희'}},{d:'2023-03-03',t:'20:00',s:'antlers_3',c:{visitor:'김려원',man:'류제윤',woman:'김수',multi:'이선, 방가희'}},{d:'2023-03-04',t:'15:00',s:'antlers_3',c:{visitor:'박민성',man:'노희찬',woman:'전성민',multi:'정종환, 이미주'}},{d:'2023-03-04',t:'18:30',s:'antlers_3',c:{visitor:'고상호',man:'정욱진',woman:'김수',multi:'정종환, 이미주'}},{d:'2023-03-05',t:'15:00',s:'antlers_3',c:{visitor:'김려원',man:'류제윤',woman:'정우연',multi:'이선, 방가희'}},{d:'2023-03-05',t:'18:30',s:'antlers_3',c:{visitor:'김려원',man:'노희찬',woman:'전성민',multi:'이선, 방가희'}},{d:'2023-03-07',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'류제윤',woman:'전성민',multi:'이선, 이미주'}},{d:'2023-03-08',t:'16:00',s:'antlers_3',c:{visitor:'고상호',man:'정욱진',woman:'정우연',multi:'정종환, 방가희'}},{d:'2023-03-08',t:'20:00',s:'antlers_3',c:{visitor:'고상호',man:'정욱진',woman:'전성민',multi:'정종환, 방가희'}},{d:'2023-03-09',t:'20:00',s:'antlers_3',c:{visitor:'김려원',man:'류제윤',woman:'김수',multi:'이선, 이미주'}},{d:'2023-03-10',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'노희찬',woman:'전성민',multi:'정종환, 이미주'}},{d:'2023-03-11',t:'15:00',s:'antlers_3',c:{visitor:'박민성',man:'노희찬',woman:'정우연',multi:'이선, 방가희'}},{d:'2023-03-11',t:'18:30',s:'antlers_3',c:{visitor:'고상호',man:'노희찬',woman:'정우연',multi:'이선, 방가희'}},{d:'2023-03-12',t:'15:00',s:'antlers_3',c:{visitor:'김려원',man:'정욱진',woman:'김수',multi:'정종환, 이미주'}},{d:'2023-03-12',t:'18:30',s:'antlers_3',c:{visitor:'김려원',man:'정욱진',woman:'전성민',multi:'정종환, 이미주'}},{d:'2023-03-14',t:'20:00',s:'antlers_3',c:{visitor:'고상호',man:'노희찬',woman:'정우연',multi:'정종환, 방가희'}},{d:'2023-03-15',t:'16:00',s:'antlers_3',c:{visitor:'박민성',man:'류제윤',woman:'김수',multi:'이선, 이미주'}},{d:'2023-03-15',t:'20:00',s:'antlers_3',c:{visitor:'고상호',man:'정욱진',woman:'전성민',multi:'이선, 이미주'}},{d:'2023-03-16',t:'20:00',s:'antlers_3',c:{visitor:'김려원',man:'노희찬',woman:'정우연',multi:'정종환, 방가희'}},{d:'2023-03-17',t:'20:00',s:'antlers_3',c:{visitor:'김려원',man:'류제윤',woman:'전성민',multi:'정종환, 방가희'}},{d:'2023-03-18',t:'15:00',s:'antlers_3',c:{visitor:'고상호',man:'노희찬',woman:'정우연',multi:'정종환, 이미주'}},{d:'2023-03-18',t:'18:30',s:'antlers_3',c:{visitor:'고상호',man:'류제윤',woman:'김수',multi:'정종환, 이미주'}},{d:'2023-03-19',t:'15:00',s:'antlers_3',c:{visitor:'박민성',man:'정욱진',woman:'전성민',multi:'이선, 방가희'}},{d:'2023-03-19',t:'18:30',s:'antlers_3',c:{visitor:'박민성',man:'정욱진',woman:'김수',multi:'이선, 방가희'}},{d:'2023-03-21',t:'20:00',s:'antlers_3',c:{visitor:'고상호',man:'노희찬',woman:'전성민',multi:'이선, 이미주'}},{d:'2023-03-22',t:'16:00',s:'antlers_3',c:{visitor:'박민성',man:'정욱진',woman:'정우연',multi:'정종환, 방가희'}},{d:'2023-03-22',t:'20:00',s:'antlers_3',c:{visitor:'고상호',man:'정욱진',woman:'김수',multi:'정종환, 방가희'}},{d:'2023-03-23',t:'20:00',s:'antlers_3',c:{visitor:'김려원',man:'류제윤',woman:'김수',multi:'이선, 이미주'}},{d:'2023-03-24',t:'20:00',s:'antlers_3',c:{visitor:'김려원',man:'노희찬',woman:'정우연',multi:'정종환, 이미주'}},{d:'2023-03-25',t:'15:00',s:'antlers_3',c:{visitor:'박민성',man:'류제윤',woman:'전성민',multi:'이선, 방가희'}},{d:'2023-03-25',t:'18:30',s:'antlers_3',c:{visitor:'박민성',man:'정욱진',woman:'김수',multi:'이선, 방가희'}},{d:'2023-03-26',t:'15:00',s:'antlers_3',c:{visitor:'고상호',man:'노희찬',woman:'정우연',multi:'정종환, 이미주'}},{d:'2023-03-26',t:'18:30',s:'antlers_3',c:{visitor:'고상호',man:'류제윤',woman:'정우연',multi:'정종환, 이미주'}},{d:'2023-03-28',t:'20:00',s:'antlers_3',c:{visitor:'고상호',man:'류제윤',woman:'전성민',multi:'정종환, 방가희'}},{d:'2023-03-29',t:'16:00',s:'antlers_3',c:{visitor:'박민성',man:'정욱진',woman:'김수',multi:'이선, 이미주'}},{d:'2023-03-29',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'정욱진',woman:'정우연',multi:'이선, 이미주'}},{d:'2023-03-30',t:'20:00',s:'antlers_3',c:{visitor:'고상호',man:'노희찬',woman:'김수',multi:'정종환, 방가희'}},{d:'2023-03-31',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'류제윤',woman:'정우연',multi:'이선, 이미주'}},{d:'2023-04-01',t:'15:00',s:'antlers_3',c:{visitor:'고상호',man:'정욱진',woman:'전성민',multi:'정종환, 방가희'}},{d:'2023-04-01',t:'18:30',s:'antlers_3',c:{visitor:'고상호',man:'노희찬',woman:'정우연',multi:'정종환, 방가희'}},{d:'2023-04-02',t:'15:00',s:'antlers_3',c:{visitor:'박민성',man:'류제윤',woman:'김수',multi:'이선, 이미주'}},{d:'2023-04-02',t:'18:30',s:'antlers_3',c:{visitor:'박민성',man:'노희찬',woman:'전성민',multi:'이선, 이미주'}},{d:'2023-04-04',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'노희찬',woman:'정우연',multi:'이선, 이미주'}},{d:'2023-04-05',t:'20:00',s:'antlers_3',c:{visitor:'고상호',man:'정욱진',woman:'김수',multi:'정종환, 방가희'}},{d:'2023-04-06',t:'20:00',s:'antlers_3',c:{visitor:'김려원',man:'노희찬',woman:'전성민',multi:'이선, 방가희'}},{d:'2023-04-07',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'류제윤',woman:'정우연',multi:'정종환, 이미주'}},{d:'2023-04-08',t:'15:00',s:'antlers_3',c:{visitor:'고상호',man:'노희찬',woman:'전성민',multi:'이선, 방가희'}},{d:'2023-04-08',t:'18:30',s:'antlers_3',c:{visitor:'고상호',man:'류제윤',woman:'김수',multi:'이선, 방가희'}},{d:'2023-04-09',t:'15:00',s:'antlers_3',c:{visitor:'박민성',man:'정욱진',woman:'정우연',multi:'정종환, 이미주'}},{d:'2023-04-09',t:'18:30',s:'antlers_3',c:{visitor:'박민성',man:'정욱진',woman:'전성민',multi:'정종환, 이미주'}},{d:'2023-04-11',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'류제윤',woman:'전성민',multi:'정종환, 이미주'}},{d:'2023-04-12',t:'20:00',s:'antlers_3',c:{visitor:'고상호',man:'노희찬',woman:'김수',multi:'이선, 방가희'}},{d:'2023-04-13',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'정욱진',woman:'전성민',multi:'이선, 방가희'}},{d:'2023-04-14',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'류제윤',woman:'정우연',multi:'정종환, 이미주'}},{d:'2023-04-15',t:'15:00',s:'antlers_3',c:{visitor:'고상호',man:'정욱진',woman:'전성민',multi:'이선, 방가희'}},{d:'2023-04-15',t:'18:30',s:'antlers_3',c:{visitor:'고상호',man:'정욱진',woman:'김수',multi:'이선, 방가희'}},{d:'2023-04-16',t:'15:00',s:'antlers_3',c:{visitor:'박민성',man:'노희찬',woman:'정우연',multi:'정종환, 이미주'}},{d:'2023-04-16',t:'18:30',s:'antlers_3',c:{visitor:'박민성',man:'노희찬',woman:'김수',multi:'정종환, 이미주'}},{d:'2023-04-17',t:'20:00',s:'antlers_3',c:{visitor:'김려원',man:'류제윤',woman:'전성민',multi:'이선, 이미주'}},{d:'2023-04-19',t:'16:00',s:'antlers_3',c:{visitor:'고상호',man:'노희찬',woman:'김수',multi:'정종환, 이미주'}},{d:'2023-04-19',t:'20:00',s:'antlers_3',c:{visitor:'고상호',man:'류제윤',woman:'전성민',multi:'정종환, 이미주'}},{d:'2023-04-20',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'정욱진',woman:'정우연',multi:'이선, 방가희'}},{d:'2023-04-21',t:'20:00',s:'antlers_3',c:{visitor:'박민성',man:'정욱진',woman:'김수',multi:'정종환, 방가희'}},{d:'2023-04-22',t:'15:00',s:'antlers_3',c:{visitor:'고상호',man:'노희찬',woman:'전성민',multi:'이선, 이미주'}},{d:'2023-04-22',t:'18:30',s:'antlers_3',c:{visitor:'고상호',man:'류제윤',woman:'김수',multi:'이선, 이미주'}},{d:'2023-04-23',t:'15:00',s:'antlers_3',c:{visitor:'박민성',man:'정욱진',woman:'전성민',multi:'정종환, 방가희'}},{d:'2023-04-23',t:'18:30',s:'antlers_3',c:{visitor:'박민성',man:'노희찬',woman:'정우연',multi:'정종환, 방가희'}},{d:'2023-12-09',t:'19:00',s:'am_5',c:{visitor:'조훈',man:'박유덕',woman:'홍륜희'}},{d:'2023-12-10',t:'14:00',s:'am_5',c:{visitor:'정인지',man:'황두현',woman:'유소리'}},{d:'2023-12-10',t:'18:00',s:'am_5',c:{visitor:'정인지',man:'이규학',woman:'서채이'}},{d:'2023-12-12',t:'20:00',s:'am_5',c:{visitor:'정인지',man:'황두현',woman:'유소리'}},{d:'2023-12-13',t:'16:00',s:'am_5',c:{visitor:'이석준',man:'박유덕',woman:'홍륜희'}},{d:'2023-12-13',t:'20:00',s:'am_5',c:{visitor:'이석준',man:'황두현',woman:'서채이'}},{d:'2023-12-14',t:'20:00',s:'am_5',c:{visitor:'정인지',man:'이규학',woman:'서채이'}},{d:'2023-12-15',t:'16:00',s:'am_5',c:{visitor:'조훈',man:'황두현',woman:'유소리'}},{d:'2023-12-15',t:'20:00',s:'am_5',c:{visitor:'조훈',man:'이규학',woman:'유소리'}},{d:'2023-12-16',t:'15:00',s:'am_5',c:{visitor:'정인지',man:'박유덕',woman:'홍륜희',perc:'양성령',violin:'정우림',guitar:'한희도',bass:'황지성',piano:'조재철'}},{d:'2023-12-16',t:'19:00',s:'am_5',c:{visitor:'이석준',man:'이규학',woman:'유소리',perc:'양성령',violin:'정우림',guitar:'한희도',bass:'황지성',piano:'조재철'}},{d:'2023-12-17',t:'14:00',s:'am_5',c:{visitor:'조훈',man:'이규학',woman:'서채이',perc:'박혜민',violin:'허유진',guitar:'강대운',bass:'권혁준',piano:'김병준'}},{d:'2023-12-17',t:'18:00',s:'am_5',c:{visitor:'이석준',man:'이규학',woman:'서채이',perc:'박혜민',violin:'허유진',guitar:'강대운',bass:'권혁준',piano:'김병준'}},{d:'2023-12-19',t:'20:00',s:'am_5',c:{visitor:'정인지',man:'황두현',woman:'서채이',perc:'박혜민',violin:'정우림',guitar:'강대운',bass:'권혁준',piano:'조재철'}},{d:'2023-12-20',t:'16:00',s:'am_5',c:{visitor:'조훈',man:'이규학',woman:'유소리',perc:'양성령',violin:'허유진',guitar:'한희도',bass:'황지성',piano:'조재철'}},{d:'2023-12-20',t:'20:00',s:'am_5',c:{visitor:'조훈',man:'박유덕',woman:'홍륜희',perc:'양성령',violin:'허유진',guitar:'한희도',bass:'권혁준',piano:'조재철'}},{d:'2023-12-21',t:'20:00',s:'am_5',c:{visitor:'이석준',man:'이규학',woman:'유소리',perc:'박혜민',violin:'정우림',guitar:'강대운',bass:'권혁준',piano:'조재철'}},{d:'2023-12-22',t:'16:00',s:'am_5',c:{visitor:'정인지',man:'박유덕',woman:'홍륜희',perc:'양성령',violin:'허유진',guitar:'한희도',bass:'권혁준',piano:'김병준'}},{d:'2023-12-22',t:'20:00',s:'am_5',c:{visitor:'정인지',man:'이규학',woman:'서채이',perc:'양성령',violin:'허유진',guitar:'한희도',bass:'권혁준',piano:'김병준'}},{d:'2023-12-23',t:'15:00',s:'am_5',c:{visitor:'이석준',man:'황두현',woman:'유소리',perc:'박혜민',violin:'정우림',guitar:'강대운',bass:'황지성',piano:'김병준'}},{d:'2023-12-23',t:'19:00',s:'am_5',c:{visitor:'조훈',man:'황두현',woman:'서채이',perc:'박혜민',violin:'정우림',guitar:'강대운',bass:'황지성',piano:'김병준'}},{d:'2023-12-24',t:'14:00',s:'am_5',c:{visitor:'이석준',man:'이규학',woman:'유소리',perc:'양성령',violin:'허유진',guitar:'한희도',bass:'권혁준',piano:'조재철'}},{d:'2023-12-24',t:'18:00',s:'am_5',c:{visitor:'정인지',man:'박유덕',woman:'홍륜희'}},{d:'2023-12-25',t:'14:00',s:'am_5',c:{visitor:'조훈',man:'이규학',woman:'유소리',perc:'박혜민',violin:'정우림',guitar:'강대운',bass:'황지성',piano:'김병준'}},{d:'2023-12-25',t:'18:00',s:'am_5',c:{visitor:'박유덕',man:'이규학',woman:'서채이',perc:'박혜민',violin:'정우림',guitar:'강대운',bass:'황지성',piano:'김병준'}},{d:'2023-12-27',t:'16:00',s:'am_5',c:{visitor:'홍륜희',man:'황두현',woman:'유소리',perc:'양성령',violin:'허유진',guitar:'강대운',bass:'황지성',piano:'조재철'}},{d:'2023-12-27',t:'20:00',s:'am_5',c:{visitor:'홍륜희',man:'황두현',woman:'서채이',perc:'양성령',violin:'허유진',guitar:'강대운',bass:'황지성',piano:'조재철'}},{d:'2023-12-28',t:'20:00',s:'am_5',c:{visitor:'이석준',man:'이규학',woman:'서채이',perc:'박혜민',violin:'정우림',guitar:'한희도',bass:'권혁준',piano:'김병준'}},{d:'2023-12-29',t:'16:00',s:'am_5',c:{visitor:'박유덕',man:'황두현',woman:'유소리',perc:'양성령',violin:'정우림',guitar:'강대운',bass:'황지성',piano:'조재철'}},{d:'2023-12-29',t:'20:00',s:'am_5',c:{visitor:'홍륜희',man:'황두현',woman:'유소리',perc:'양성령',violin:'정우림',guitar:'강대운',bass:'황지성',piano:'조재철'}},{d:'2023-12-30',t:'15:00',s:'am_5',c:{visitor:'조훈',man:'이규학',woman:'서채이',perc:'박혜민',violin:'허유진',guitar:'강대운',bass:'권혁준',piano:'김병준'}},{d:'2023-12-30',t:'19:00',s:'am_5',c:{visitor:'박유덕',man:'이규학',woman:'유소리',perc:'박혜민',violin:'허유진',guitar:'강대운',bass:'권혁준',piano:'김병준'}},{d:'2023-12-31',t:'15:00',s:'am_5',c:{visitor:'박유덕',man:'황두현',woman:'서채이',perc:'양성령',violin:'정우림',guitar:'강대운',bass:'권혁준',piano:'김병준'}},{d:'2023-12-31',t:'19:00',s:'am_5',c:{visitor:'이석준',man:'황두현',woman:'서채이',perc:'양성령',violin:'정우림',guitar:'강대운',bass:'황지성',piano:'조재철'}},{d:'2023-12-31',t:'22:20',s:'am_5',c:{visitor:'조훈',man:'이규학',woman:'유소리',perc:'박혜민',violin:'허유진',guitar:'강대운',bass:'권혁준',piano:'조재철'}},{d:'2024-01-02',t:'20:00',s:'am_5',c:{visitor:'이석준',man:'박유덕',woman:'홍륜희',perc:'양성령',violin:'정우림',guitar:'한희도',bass:'권혁준',piano:'조재철'}},{d:'2024-01-03',t:'16:00',s:'am_5',c:{visitor:'박유덕',man:'이규학',woman:'유소리',perc:'박혜민',violin:'허유진',guitar:'강대운',bass:'권혁준',piano:'조재철'}},{d:'2024-01-03',t:'20:00',s:'am_5',c:{visitor:'박유덕',man:'이규학',woman:'서채이',perc:'박혜민',violin:'허유진',guitar:'강대운',bass:'황지성',piano:'조재철'}},{d:'2024-01-04',t:'20:00',s:'am_5',c:{visitor:'정인지',man:'황두현',woman:'유소리',perc:'박혜민',violin:'정우림',guitar:'한희도',bass:'황지성',piano:'김병준'}},{d:'2024-01-05',t:'16:00',s:'am_5',c:{visitor:'홍륜희',man:'이규학',woman:'서채이',perc:'양성령',violin:'정우림',guitar:'한희도',bass:'권혁준',piano:'김병준'}},{d:'2024-01-05',t:'20:00',s:'am_5',c:{visitor:'홍륜희',man:'이규학',woman:'유소리',perc:'양성령',violin:'정우림',guitar:'한희도',bass:'권혁준',piano:'김병준'}},{d:'2024-01-06',t:'15:00',s:'am_5',c:{visitor:'이석준',man:'이규학',woman:'서채이',perc:'박혜민',violin:'허유진',guitar:'강대운',bass:'황지성',piano:'김병준'}},{d:'2024-01-06',t:'19:00',s:'am_5',c:{visitor:'조훈',man:'이규학',woman:'서채이',perc:'박혜민',violin:'허유진',guitar:'강대운',bass:'황지성',piano:'김병준'}},{d:'2024-01-07',t:'14:00',s:'am_5',c:{visitor:'박유덕',man:'황두현',woman:'유소리',perc:'양성령',violin:'정우림',guitar:'한희도',bass:'권혁준',piano:'조재철'}},{d:'2024-01-07',t:'18:00',s:'am_5',c:{visitor:'홍륜희',man:'황두현',woman:'유소리',perc:'양성령',violin:'정우림',guitar:'한희도',bass:'권혁준',piano:'조재철'}},{d:'2024-01-10',t:'20:00',s:'am_5',c:{visitor:'정인지',man:'이규학',woman:'유소리',perc:'양성령',violin:'허유진',guitar:'강대운',bass:'황지성',piano:'조재철'}},{d:'2024-01-11',t:'20:00',s:'am_5',c:{visitor:'이석준',man:'황두현',woman:'유소리',perc:'박혜민',violin:'정우림',guitar:'강대운',bass:'권혁준',piano:'김병준'}},{d:'2024-01-12',t:'16:00',s:'am_5',c:{visitor:'조훈',man:'이규학',woman:'서채이',perc:'양성령',violin:'허유진',guitar:'강대운',bass:'황지성',piano:'김병준'}},{d:'2024-01-12',t:'20:00',s:'am_5',c:{visitor:'이석준',man:'박유덕',woman:'홍륜희',perc:'양성령',violin:'허유진',guitar:'강대운',bass:'황지성',piano:'김병준'}},{d:'2024-01-13',t:'15:00',s:'am_5',c:{visitor:'정인지',man:'황두현',woman:'서채이',perc:'박혜민',violin:'정우림',guitar:'한희도',bass:'권혁준',piano:'김병준'}},{d:'2024-01-13',t:'19:00',s:'am_5',c:{visitor:'정인지',man:'박유덕',woman:'홍륜희',perc:'박혜민',violin:'정우림',guitar:'한희도',bass:'권혁준',piano:'김병준'}},{d:'2024-01-14',t:'14:00',s:'am_5',c:{visitor:'조훈',man:'이규학',woman:'유소리',perc:'양성령',violin:'허유진',guitar:'강대운',bass:'황지성',piano:'조재철'}},{d:'2024-01-16',t:'20:00',s:'am_5',c:{visitor:'이석준',man:'황두현',woman:'서채이',perc:'박혜민',violin:'정우림',guitar:'한희도',bass:'권혁준',piano:'조재철'}},{d:'2024-01-17',t:'16:00',s:'am_5',c:{visitor:'조훈',man:'이규학',woman:'유소리',perc:'양성령',violin:'허유진',guitar:'강대운',bass:'황지성',piano:'조재철'}},{d:'2024-01-17',t:'20:00',s:'am_5',c:{visitor:'정인지',man:'박유덕',woman:'홍륜희',perc:'양성령',violin:'허유진',guitar:'강대운',bass:'황지성',piano:'김병준'}},{d:'2024-01-18',t:'20:00',s:'am_5',c:{visitor:'정인지',man:'이규학',woman:'서채이',perc:'양성령',violin:'정우림',guitar:'한희도',bass:'황지성',piano:'김병준'}},{d:'2024-01-19',t:'16:00',s:'am_5',c:{visitor:'이석준',man:'박유덕',woman:'홍륜희',perc:'박혜민',violin:'정우림',guitar:'한희도',bass:'권혁준',piano:'김병준'}},{d:'2024-01-19',t:'20:00',s:'am_5',c:{visitor:'조훈',man:'이규학',woman:'서채이',perc:'박혜민',violin:'정우림',guitar:'한희도',bass:'권혁준',piano:'김병준'}},{d:'2024-01-20',t:'15:00',s:'am_5',c:{visitor:'정인지',man:'황두현',woman:'유소리',perc:'양성령',violin:'허유진',guitar:'강대운',bass:'황지성',piano:'조재철'}},{d:'2024-01-20',t:'19:00',s:'am_5',c:{visitor:'조훈',man:'박유덕',woman:'홍륜희',perc:'양성령',violin:'허유진',guitar:'강대운',bass:'황지성',piano:'조재철'}},{d:'2024-01-21',t:'14:00',s:'am_5',c:{visitor:'이석준',man:'이규학',woman:'유소리'}},{d:'2024-01-21',t:'18:00',s:'am_5',c:{visitor:'정인지',man:'황두현',woman:'서채이'}}]; /* @@SCHEDULE_SEED@@ */
+
+/* 시즌별 리드 캐스트(맨·우먼·비지터) — 사용자 제공 정본. 플레이어는 SEASON_POSITIONS 참조. */
+const SEASON_CASTS = {
+  // 앤틀러스
+  antlers_1: { man:['백형훈','배두훈'], woman:['전성민','김리'], visitor:['정원영','고상호'] },
+  antlers_2: { man:['백형훈','안창용','황민수'], woman:['김금나','김리'], visitor:['고상호','박은석','유리아'] },
+  antlers_3: { man:['류제윤','정욱진','노희찬'], woman:['전성민','정우연','김수'], visitor:['고상호','박민성','김려원'] },
+  antlers_4: { man:['박유덕','이창용','신수빈'], woman:['김리','여은','박시인'], visitor:['김종구','고상호','김려원','장보람'] },
+  // 액터뮤지션
+  am_1: { man:['홍승안','김지휘'], woman:['최연우','김리'], visitor:['고상호','양지원'] },
+  am_2: { man:['김지철','손유동','윤석현'], woman:['최연우','김리','홍지희'], visitor:['고상호','신성민','조환지'] },
+  am_3: { man:['정동화','배두훈','현석준','김지철'], woman:['김소향','최연우','김수연','김리'], visitor:['김찬호','이충주','이석준','신성민','조환지'] },
+  am_4: { man:['김동현','김영진','김지훈','선한국','박선영','홍성원','장유상','이진혁'], woman:['전성민','주다온','이하린','박새힘','전혜주','서채이'], visitor:['조훈','박상혁','윤석호','남민우','장보람','홍륜희','박유덕','이진혁'] },
+  am_encore_theday: { man:['김동현','선한국','장유상','이진혁','김지훈','홍성원'], woman:['서채이','박새힘','전혜주','주다온'], visitor:['홍륜희','박유덕','이진혁','남민우','장보람','정민석'] },
+  am_5: { man:['박유덕','황두현','이규학'], woman:['홍륜희','서채이','유소리'], visitor:['정인지','조훈','이석준','홍륜희','박유덕'] },
+  am_6: { man:['이주순','이승준','신수빈'], woman:['신의정','랑연','김서연'], visitor:['이승현','장보람','조훈','양지원','김경민','여은'] },
+  am_7: { man:['황두현','선한국','이규학','김도하','최하람'], woman:['전성민','유소리','김보미','김소정','전혜주'], visitor:['홍륜희','박유덕','서동진','남민우','조환지','박선영'] },
+  am_encore_thechoice: { man:['조현우','한재원','김태형'], woman:['서채이','이상아','박혜민'], visitor:['임강성','랑연','여은','김대현','장보람','박슬기'] }
+};
+
+const SEED_SEASONS = [
+  // 앤틀러스
+  { id:'antlers_1', editionId:'antlers', name:'초연', ord:1, start:'2017-01-08', end:'2017-02-26', theater:'대학로 아트원씨어터 2관', note:'월드 프리미어', cancelled:[] },
+  { id:'antlers_2', editionId:'antlers', name:'재연', ord:2, start:'2020-02-11', end:'2020-05-03', theater:'대학로 아트원씨어터 2관', note:'', cancelled:[] },
+  { id:'antlers_3', editionId:'antlers', name:'삼연', ord:3, start:'2023-01-31', end:'2023-04-23', theater:'플러스씨어터', note:'', cancelled:[] },
+  { id:'antlers_4', editionId:'antlers', name:'사연', ord:4, start:'2026-10-04', end:'2026-11-15', theater:'NOL 유니플렉스 1관', note:'10주년 기념', cancelled:[] },
+  // 액터뮤지션
+  { id:'am_1', editionId:'actormusician', name:'초연', ord:1, start:'2018-12-04', end:'2019-02-10', theater:'DCF대명문화공장 2관 라이프웨이홀', note:'', cancelled:[] },
+  { id:'am_2', editionId:'actormusician', name:'재연', ord:2, start:'2020-04-11', end:'2020-07-05', theater:'예스24 스테이지 3관', note:'', cancelled:[] },
+  { id:'am_3', editionId:'actormusician', name:'삼연', ord:3, start:'2020-12-01', end:'2021-06-06', theater:'백암아트홀 → 대학로 TOM 1관', note:'코로나로 12/6 중단→2/3 재개막(백암 ~2/21), 3/2~6/6 대학로 TOM 1관 연장',
+    cancelled:[{ start:'2020-12-07', end:'2021-02-02', reason:'코로나19 공연 중단' }] },
+  { id:'am_4', editionId:'actormusician', name:'사연', ord:4, start:'2022-01-19', end:'2022-11-13', theater:'예그린씨어터', note:'', cancelled:[] },
+  { id:'am_encore_theday', editionId:'actormusician', name:'앵콜 "더데이"', ord:4.5, start:'2022-12-15', end:'2022-12-31', theater:'이화여고 100주년기념관 화암홀', note:'앵콜 공연', cancelled:[] },
+  { id:'am_5', editionId:'actormusician', name:'오연', ord:5, start:'2023-12-09', end:'2024-01-21', theater:'대학로 아트원씨어터 1관', note:'', cancelled:[] },
+  { id:'am_6', editionId:'actormusician', name:'육연', ord:6, start:'2025-12-13', end:'2026-03-15', theater:'예스24아트원 1관', note:'', cancelled:[] },
+  { id:'am_7', editionId:'actormusician', name:'칠연', ord:7, start:'2026-04-08', end:'2026-08-09', theater:'NOL 유니플렉스 3관', note:'', cancelled:[] },
+  { id:'am_encore_thechoice', editionId:'actormusician', name:'앵콜 "더초이스"', ord:7.5, start:'2026-08-11', end:'2026-11-29', theater:'NOL 유니플렉스 3관', note:'THE CHOICE · 10주년', cancelled:[] }
+];
+
+/* ============================================================
+   Helpers
+   ============================================================ */
+const $  = (s,el=document)=>el.querySelector(s);
+const $$ = (s,el=document)=>Array.from(el.querySelectorAll(s));
+const clone = o => JSON.parse(JSON.stringify(o));
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),2200); }
+function uid4(){ return Math.random().toString(36).slice(2,6); }
+function todayISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fmtWon(n){ return n==null||n===''?'':'₩'+Number(n).toLocaleString('ko-KR'); }
+function dowKR(iso){ const d=new Date(iso+'T00:00:00'); return ['일','월','화','수','목','금','토'][d.getDay()]; }
+function setSync(st){ const dot=$('#syncDot'); if(!dot) return; dot.className='dot '+st; }
+
+/* ============================================================
+   State
+   ============================================================ */
+let state = null;
+let editingId = null;
+let pendingImages = [];   // {blob,dataUrl,w,h,kind}
+let theaterTouched = false; // 사용자가 극장을 직접 수정했는지 (true면 시즌 변경 시 덮어쓰지 않음)
+let seedLoadComplete = !SUPABASE_ENABLED; // 로컬 모드는 항상 true
+let viewFilter = { search:'', edition:'', season:'', sort:'date-desc', needsOnly:false, calDate:'' };
+
+function deriveActorPools(roles, seasons){
+  roles.forEach(r=>{
+    const set = new Set(r.actors||[]);
+    seasons.forEach(s=>{ const arr=(s.casts&&s.casts[r.id])||[]; arr.forEach(a=>set.add(a)); });
+    r.actors = Array.from(set).sort((a,b)=>a.localeCompare(b,'ko'));
+  });
+}
+function buildActorList(roles){
+  const map = {};
+  roles.forEach(r=> (r.actors||[]).forEach(a=>{ if(!map[a]) map[a]={name:a,roleIds:[],note:'',color:''}; if(!map[a].roleIds.includes(r.id)) map[a].roleIds.push(r.id); }));
+  return Object.values(map);
+}
+function freshState(){
+  const roles = clone(SEED_ROLES);
+  const editions = clone(SEED_EDITIONS);
+  const seasons = clone(SEED_SEASONS).map(s=>({ ...s, casts: clone(SEASON_CASTS[s.id]||{}), positions: clone(SEASON_POSITIONS[s.id]||[]) }));
+  deriveActorPools(roles, seasons);
+  const actors = buildActorList(roles);
+  return { schemaVersion:1, seedVersion:SEED_VERSION, roles, editions, seasons, actors, viewings:[], settings:{ theme:'midnight', defaultTheater:'' } };
+}
+function loadState(){
+  try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw){ const s=JSON.parse(raw); return migrate(s); } }catch(e){ console.warn('loadState',e); }
+  return freshState();
+}
+function migrate(s){
+  s.schemaVersion = s.schemaVersion||1;
+  s.roles = s.roles||clone(SEED_ROLES);
+  s.editions = s.editions||clone(SEED_EDITIONS);
+  s.seasons = s.seasons||[];
+  s.actors = s.actors||[];
+  s.viewings = s.viewings||[];
+  s.settings = s.settings||{ theme:'midnight', defaultTheater:'' };
+  return s;
+}
+/* 시드 버전 마이그레이션 — 시즌 메타(극장/날짜/포지션)를 정본으로 강제 갱신(1회). 관극기록·평점은 보존. */
+function applySeedRefresh(){
+  if(state.seedVersion === SEED_VERSION) return;
+  state.seasons.forEach(s=>{
+    const seed = SEED_SEASONS.find(x=>x.id===s.id);
+    if(seed){ s.editionId=seed.editionId; s.name=seed.name; s.ord=seed.ord; s.start=seed.start; s.end=seed.end; s.theater=seed.theater; s.note=seed.note; s.cancelled=clone(seed.cancelled||[]); }
+    if(SEASON_POSITIONS[s.id]) s.positions=clone(SEASON_POSITIONS[s.id]);
+  });
+  state.seedVersion = SEED_VERSION;
+}
+/* 앱 업데이트 시 새 시드(시즌/역할/버전/포지션) 병합 — 기존 편집은 보존 */
+function mergeSeed(){
+  // 폐기된 역할 제거(구 통합 'player' → 이제 시즌별 포지션으로 대체) — 매 로드 무조건
+  state.roles = (state.roles||[]).filter(r=>r.id!=='player');
+  // 잔여 'player' 캐스팅 이관: 앤틀러스는 멀티플레이어로, 그 외는 정리
+  (state.viewings||[]).forEach(v=>{ if(v.casting && v.casting.player!=null){ const s=(state.seasons||[]).find(x=>x.id===v.seasonId); if(s&&s.editionId==='antlers') v.casting.multi=v.casting.multi||v.casting.player; delete v.casting.player; } });
+  const have = id => state.seasons.some(s=>s.id===id);
+  SEED_SEASONS.forEach(seed=>{
+    if(!have(seed.id)){ state.seasons.push({ ...clone(seed), casts: clone(SEASON_CASTS[seed.id]||{}), positions: clone(SEASON_POSITIONS[seed.id]||[]) }); }
+  });
+  SEED_ROLES.forEach(seed=>{ if(!state.roles.some(r=>r.id===seed.id)) state.roles.push(clone(seed)); });
+  SEED_EDITIONS.forEach(seed=>{ if(!state.editions.some(e=>e.id===seed.id)) state.editions.push(clone(seed)); });
+  applySeedRefresh(); // 극장/포지션 정본 갱신(버전 게이트)
+  // 시즌 리드 캐스트 backfill — 비어있는 항목만(사용자 편집 보존)
+  state.seasons.forEach(s=>{ const seed=SEASON_CASTS[s.id]; if(seed){ if(!s.casts) s.casts={};
+    Object.keys(seed).forEach(rid=>{ if(!s.casts[rid] || !s.casts[rid].length) s.casts[rid]=seed[rid].slice(); }); }
+    // 포지션 backfill — 비어있으면 시드에서(클라우드 라운드트립 대비)
+    if((!s.positions || !s.positions.length) && SEASON_POSITIONS[s.id]) s.positions=clone(SEASON_POSITIONS[s.id]);
+  });
+  // 리드 역할 풀에 시드 캐스트명 보강(자동완성용)
+  state.roles.forEach(r=>{
+    const set=new Set(r.actors||[]);
+    state.seasons.forEach(s=>{ ((s.casts&&s.casts[r.id])||[]).forEach(a=>set.add(a)); });
+    r.actors=Array.from(set).sort((a,b)=>a.localeCompare(b,'ko'));
+  });
+  state.seasons.sort((a,b)=>{
+    const ea=state.editions.findIndex(e=>e.id===a.editionId), eb=state.editions.findIndex(e=>e.id===b.editionId);
+    return ea-eb || a.ord-b.ord;
+  });
+}
+function saveState(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ console.warn('saveState',e); } }
+
+/* ============================================================
+   Season inference
+   ============================================================ */
+function inferSeason(dateStr, editionId){
+  if(!dateStr) return null;
+  const inRange = state.seasons.filter(s => (!editionId||s.editionId===editionId) && s.start<=dateStr && dateStr<=s.end);
+  if(inRange.length) return inRange.sort((a,b)=>a.ord-b.ord)[0];
+  return null;
+}
+function seasonById(id){ return state.seasons.find(s=>s.id===id)||null; }
+function editionById(id){ return state.editions.find(e=>e.id===id)||null; }
+function roleById(id){ return state.roles.find(r=>r.id===id)||null; }
+function isCancelledDate(season, dateStr){ return season && (season.cancelled||[]).some(c=>c.start<=dateStr && dateStr<=c.end); }
+
+/* ============================================================
+   Casting helpers
+   ============================================================ */
+function splitSwap(str){ return String(str||'').split(/[→,]/).map(s=>s.trim()).filter(Boolean); } // 교체(→) & 다중배우(,) 모두 분리
+function castingActors(casting){ // 모든 배우(교체 포함) 평탄화
+  const out=[]; Object.values(casting||{}).forEach(v=>splitSwap(v).forEach(a=>out.push(a))); return out;
+}
+/* 캐스팅 컬럼(리드 역할 + 표준 포지션) — 통계/필터/CSV 공통 */
+function castingColumns(){
+  const cols=state.roles.slice().sort((a,b)=>a.sortIdx-b.sortIdx).map(r=>({key:r.id,name:r.name,multi:!!r.multi}));
+  POSITION_DEFS.forEach(p=>cols.push({key:p.key,name:p.name,multi:p.multi}));
+  return cols;
+}
+function castKeyCanonLabel(key){ const r=roleById(key); if(r) return r.name; const d=POSITION_DEFS.find(x=>x.key===key); return d?d.name:key; }
+function castKeyLabel(seasonId,key){ // 시즌별 표시 라벨(포지션은 그 시즌 명칭)
+  const r=roleById(key); if(r) return r.name;
+  const s=seasonById(seasonId); if(s&&s.positions){ const p=s.positions.find(x=>x.key===key); if(p) return p.label; }
+  return castKeyCanonLabel(key);
+}
+function orderedCastKeys(casting){ return Object.keys(casting||{}).sort((a,b)=>{ const ia=CAST_KEY_ORDER.indexOf(a),ib=CAST_KEY_ORDER.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); }); }
+/* 폼 캐스팅 필드: 리드 3역 + 해당 시즌 플레이어 포지션 */
+function getFormCastFields(seasonId){
+  const season=seasonById(seasonId);
+  const fields=state.roles.slice().sort((a,b)=>a.sortIdx-b.sortIdx).map(r=>{
+    const sp=(season&&season.casts&&season.casts[r.id])||[];
+    return { key:r.id, label:r.name, sub:r.nameEn||'', multi:!!r.multi, pool:(sp.length?sp:r.actors), seasonPool:sp };
+  });
+  if(season && season.positions) season.positions.forEach(p=>fields.push({ key:p.key, label:p.label, sub:'', multi:!!p.multi, pool:(p.cast||[]), seasonPool:(p.cast||[]) }));
+  return fields;
+}
+function absorbActors(viewing){
+  let added=false;
+  const season=seasonById(viewing.seasonId);
+  Object.keys(viewing.casting||{}).forEach(key=>{
+    const role=roleById(key);
+    const pos = (!role && season && season.positions) ? season.positions.find(p=>p.key===key) : null;
+    splitSwap(viewing.casting[key]).forEach(n=>{
+      if(role){ if(!role.actors.includes(n)){ role.actors.push(n); added=true; } }
+      else if(pos){ if(!pos.cast) pos.cast=[]; if(!pos.cast.includes(n)){ pos.cast.push(n); added=true; } }
+      let a=state.actors.find(x=>x.name===n);
+      if(!a){ a={name:n,roleIds:[key],note:'',color:''}; state.actors.push(a); added=true; }
+      else if(!a.roleIds.includes(key)){ a.roleIds.push(key); added=true; }
+    });
+  });
+  state.roles.forEach(r=>r.actors.sort((x,y)=>x.localeCompare(y,'ko')));
+  return added;
+}
+
+/* ============================================================
+   Hexagon
+   ============================================================ */
+function ratingAvg(ratings){
+  const vals=RATING_AXES.map(a=>Number(ratings&&ratings[a.key])||0).filter(v=>v>0);
+  if(!vals.length) return null;
+  return vals.reduce((a,b)=>a+b,0)/vals.length;
+}
+function hexPointStr(vals, cx, cy, r){
+  return vals.map((v,i)=>{ const ang=-Math.PI/2 + i*Math.PI/3, rr=r*(Math.max(0,Math.min(5,v))/5);
+    return (cx+rr*Math.cos(ang)).toFixed(1)+','+(cy+rr*Math.sin(ang)).toFixed(1); }).join(' ');
+}
+function hexSVG(ratings, size, withLabels){
+  const cx=size/2, cy=size/2, R=size*0.38;
+  const vals=RATING_AXES.map(a=>Number(ratings&&ratings[a.key])||0);
+  let grid='';
+  for(let ring=1; ring<=5; ring++){
+    const pts=hexPointStr(RATING_AXES.map(()=>ring), cx, cy, R);
+    grid += '<polygon points="'+pts+'" fill="none" stroke="#332a1c" stroke-width="0.7"/>';
+  }
+  let axes='';
+  RATING_AXES.forEach((a,i)=>{ const ang=-Math.PI/2+i*Math.PI/3;
+    axes+='<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+R*Math.cos(ang)).toFixed(1)+'" y2="'+(cy+R*Math.sin(ang)).toFixed(1)+'" stroke="#2a2216" stroke-width="0.7"/>';
+  });
+  const dataPts=hexPointStr(vals, cx, cy, R);
+  const poly='<polygon points="'+dataPts+'" fill="rgba(201,164,92,0.22)" stroke="#c9a45c" stroke-width="1.6" stroke-linejoin="round"/>';
+  let dots=''; vals.forEach((v,i)=>{ if(v>0){ const ang=-Math.PI/2+i*Math.PI/3, rr=R*(v/5);
+    dots+='<circle cx="'+(cx+rr*Math.cos(ang)).toFixed(1)+'" cy="'+(cy+rr*Math.sin(ang)).toFixed(1)+'" r="2.2" fill="#e6c479"/>'; } });
+  let labels='';
+  if(withLabels){ RATING_AXES.forEach((a,i)=>{ const ang=-Math.PI/2+i*Math.PI/3, lr=R+16;
+    const x=cx+lr*Math.cos(ang), y=cy+lr*Math.sin(ang);
+    const anchor = Math.abs(Math.cos(ang))<0.3?'middle':(Math.cos(ang)>0?'start':'end');
+    labels+='<text x="'+x.toFixed(1)+'" y="'+(y+3).toFixed(1)+'" fill="#b3a68c" font-size="10" text-anchor="'+anchor+'" font-family="Noto Serif KR">'+a.name+'</text>'; }); }
+  return grid+axes+poly+dots+labels;
+}
+
+/* ============================================================
+   Image compression
+   ============================================================ */
+function compressImage(file, maxDim=1600, q=0.82){
+  return new Promise((resolve,reject)=>{
+    const url=URL.createObjectURL(file); const img=new Image();
+    img.onload=()=>{
+      const scale=Math.min(1, maxDim/Math.max(img.width,img.height));
+      const w=Math.round(img.width*scale), h=Math.round(img.height*scale);
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      c.toBlob(blob=>{ if(!blob){ reject(new Error('compress fail')); return; }
+        const fr=new FileReader(); fr.onload=()=>resolve({blob,dataUrl:fr.result,w,h}); fr.readAsDataURL(blob);
+      },'image/webp',q);
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error('img load fail')); };
+    img.src=url;
+  });
+}
+async function imageSrc(imgObj){
+  if(!imgObj) return '';
+  if(imgObj.dataUrl) return imgObj.dataUrl;
+  if(imgObj.path && sb){ try{ const {data}=await sb.storage.from(BUCKET).createSignedUrl(imgObj.path,3600); return data?data.signedUrl:''; }catch(e){ return ''; } }
+  return '';
+}
+async function uploadPending(viewing){
+  for(let i=0;i<pendingImages.length;i++){
+    const p=pendingImages[i];
+    if(sb && currentUser){
+      const path=currentUser.id+'/'+viewing.id+'/'+Date.now()+'_'+i+'.webp';
+      try{
+        const {error}=await sb.storage.from(BUCKET).upload(path,p.blob,{contentType:'image/webp',upsert:true});
+        if(error) throw error;
+        viewing.images.push({path,w:p.w,h:p.h,kind:p.kind||'ticket'});
+      }catch(e){ console.warn('upload fail, base64 fallback',e); viewing.images.push({dataUrl:p.dataUrl,w:p.w,h:p.h,kind:p.kind||'ticket'}); }
+    } else {
+      viewing.images.push({dataUrl:p.dataUrl,w:p.w,h:p.h,kind:p.kind||'ticket'});
+    }
+  }
+  pendingImages=[];
+}
+
+/* ============================================================
+   Push queue (Supabase sync)
+   ============================================================ */
+let pushQ = { viewings:new Set(), delViewings:new Set(), config:false, settings:false };
+let pushTimer=null;
+function persistPush(){ try{ localStorage.setItem(PUSH_KEY, JSON.stringify({viewings:[...pushQ.viewings],delViewings:[...pushQ.delViewings],config:pushQ.config,settings:pushQ.settings})); }catch(e){} }
+function restorePush(){ try{ const r=JSON.parse(localStorage.getItem(PUSH_KEY)); if(r){ pushQ.viewings=new Set(r.viewings||[]); pushQ.delViewings=new Set(r.delViewings||[]); pushQ.config=!!r.config; pushQ.settings=!!r.settings; } }catch(e){} }
+function queueViewing(id){ pushQ.viewings.add(id); pushQ.delViewings.delete(id); persistPush(); schedulePush(); }
+function queueDelViewing(id){ pushQ.delViewings.add(id); pushQ.viewings.delete(id); persistPush(); schedulePush(); }
+function queueConfig(){ pushQ.config=true; persistPush(); schedulePush(); }
+function queueSettings(){ pushQ.settings=true; persistPush(); schedulePush(); }
+function schedulePush(){ if(!sb||!currentUser) return; clearTimeout(pushTimer); pushTimer=setTimeout(flushPush,800); }
+
+function vToRow(v){ return { user_id:currentUser.id, id:v.id, date:v.date||null, session:v.session||null, time_text:v.timeText||null,
+  edition_id:v.editionId||null, season_id:v.seasonId||null, theater:v.theater||null, seat:v.seat||null,
+  casting:v.casting||{}, ratings:v.ratings||{}, one_liner:v.oneLiner||null, review:v.review||null,
+  price:(v.price===''||v.price==null)?null:Number(v.price), sightline:v.sightline||null,
+  images:v.images||[], needs_review:!!v.needsReview,
+  created_at:new Date(v.createdAt||Date.now()).toISOString(), updated_at:new Date(v.updatedAt||Date.now()).toISOString() }; }
+function rowToV(r){ return { id:r.id, date:r.date||'', session:r.session||'', timeText:r.time_text||'',
+  editionId:r.edition_id||'', seasonId:r.season_id||'', theater:r.theater||'', seat:r.seat||'',
+  casting:r.casting||{}, ratings:r.ratings||{}, oneLiner:r.one_liner||'', review:r.review||'',
+  price:r.price==null?'':r.price, sightline:r.sightline||'', images:r.images||[], needsReview:!!r.needs_review,
+  createdAt:r.created_at?Date.parse(r.created_at):Date.now(), updatedAt:r.updated_at?Date.parse(r.updated_at):Date.now(), source:'user' }; }
+
+async function flushPush(){
+  if(!sb||!currentUser) return;
+  setSync('syncing');
+  try{
+    if(pushQ.config && seedLoadComplete){
+      await sb.from('roles').upsert(state.roles.map(r=>({id:r.id,name:r.name,name_en:r.nameEn,sort_idx:r.sortIdx,actors:r.actors,multi:!!r.multi})));
+      await sb.from('editions').upsert(state.editions.map(e=>({id:e.id,name:e.name,name_en:e.nameEn,default_theater:e.defaultTheater||null,accent:e.accent,sort_idx:e.sortIdx})));
+      await sb.from('seasons').upsert(state.seasons.map(s=>({id:s.id,edition_id:s.editionId,name:s.name,ord:s.ord,start_date:s.start||null,end_date:s.end||null,theater:s.theater||null,note:s.note||null,cancelled:s.cancelled||[],casts:s.casts||{},positions:s.positions||[]})));
+      await sb.from('actors').upsert(state.actors.map(a=>({name:a.name,role_ids:a.roleIds||[],note:a.note||null,color:a.color||null})));
+      pushQ.config=false;
+    }
+    const vids=[...pushQ.viewings];
+    if(vids.length){
+      const rows=vids.map(id=>state.viewings.find(v=>v.id===id)).filter(Boolean).map(vToRow);
+      if(rows.length){ const {error}=await sb.from('viewings').upsert(rows); if(error) throw error; }
+      vids.forEach(id=>pushQ.viewings.delete(id));
+    }
+    const dids=[...pushQ.delViewings];
+    if(dids.length){ const {error}=await sb.from('viewings').delete().eq('user_id',currentUser.id).in('id',dids); if(error) throw error; dids.forEach(id=>pushQ.delViewings.delete(id)); }
+    if(pushQ.settings){ const {error}=await sb.from('user_settings').upsert({user_id:currentUser.id,settings:state.settings}); if(error) throw error; pushQ.settings=false; }
+    persistPush(); setSync('ok');
+  }catch(e){ console.error('flushPush',e); setSync('err'); clearTimeout(pushTimer); pushTimer=setTimeout(flushPush,4000); }
+}
+
+async function loadFromSupabase(){
+  if(!sb||!currentUser) return;
+  const [roles,eds,seasons,actors,viewings,settings]=await Promise.all([
+    sb.from('roles').select('*').order('sort_idx'),
+    sb.from('editions').select('*').order('sort_idx'),
+    sb.from('seasons').select('*').order('ord'),
+    sb.from('actors').select('*'),
+    sb.from('viewings').select('*').eq('user_id',currentUser.id),
+    sb.from('user_settings').select('*').eq('user_id',currentUser.id).maybeSingle()
+  ]);
+  const cloudConfig = (roles.data&&roles.data.length) || (seasons.data&&seasons.data.length);
+  if(cloudConfig){
+    if(roles.data&&roles.data.length) state.roles=roles.data.map(r=>({id:r.id,name:r.name,nameEn:r.name_en,sortIdx:r.sort_idx,actors:r.actors||[],multi:!!r.multi}));
+    if(eds.data&&eds.data.length) state.editions=eds.data.map(e=>({id:e.id,name:e.name,nameEn:e.name_en,defaultTheater:e.default_theater||'',accent:e.accent,sortIdx:e.sort_idx}));
+    if(seasons.data&&seasons.data.length) state.seasons=seasons.data.map(s=>({id:s.id,editionId:s.edition_id,name:s.name,ord:Number(s.ord),start:s.start_date||'',end:s.end_date||'',theater:s.theater||'',note:s.note||'',cancelled:s.cancelled||[],casts:s.casts||{},positions:s.positions||[]}));
+    if(actors.data) state.actors=actors.data.map(a=>({name:a.name,roleIds:a.role_ids||[],note:a.note||'',color:a.color||''}));
+    mergeSeed(); // 클라우드에 없는 신규 시드 보강
+  }
+  const cloudV=(viewings.data||[]).map(rowToV);
+  const byId={}; cloudV.forEach(v=>byId[v.id]=v);
+  state.viewings.forEach(lv=>{
+    if(pushQ.viewings.has(lv.id) || !byId[lv.id] || lv.updatedAt>byId[lv.id].updatedAt) byId[lv.id]=lv;
+  });
+  pushQ.delViewings.forEach(id=>delete byId[id]);
+  state.viewings=Object.values(byId);
+  if(settings&&settings.data&&settings.data.settings) state.settings={...state.settings,...settings.data.settings};
+  seedLoadComplete=true;
+  saveState();
+  if(!cloudConfig) queueConfig(); // 빈 클라우드에 로컬 시드 1회 푸시
+}
+
+/* ============================================================
+   Auth
+   ============================================================ */
+let localMode=false;
+function showAuth(){ if(localMode) return; $('#authOverlay').classList.add('show'); }
+function hideAuth(){ $('#authOverlay').classList.remove('show'); }
+function updateUserChip(){
+  if(!SUPABASE_ENABLED || localMode){ $('#userLabel').textContent='로컬 모드'+(localMode?' (동기화 꺼짐)':''); setSync('local'); $('#localBanner').style.display='block'; return; }
+  if(currentUser){ $('#userLabel').textContent=currentUser.email||'로그인됨'; $('#signOutLink').style.display='inline'; }
+  else { $('#userLabel').textContent='로그아웃됨'; $('#signOutLink').style.display='none'; }
+}
+async function initSession(session){
+  currentUser = session ? session.user : null;
+  updateUserChip();
+  if(currentUser){
+    restorePush();
+    try{ await loadFromSupabase(); }catch(e){ console.error('loadFromSupabase',e); toast('클라우드 로드 실패 — 로컬 데이터 사용'); seedLoadComplete=true; }
+    hideAuth(); renderAll(); flushPush();
+  } else {
+    showAuth();
+  }
+}
+let authMode='signin';
+async function doAuth(){
+  const email=$('#au-email').value.trim(), pw=$('#au-pw').value;
+  const errEl=$('#au-err'); errEl.textContent='';
+  if(!email||!pw){ errEl.textContent='이메일과 비밀번호를 입력하세요'; return; }
+  try{
+    if(authMode==='signin'){ const {error}=await sb.auth.signInWithPassword({email,password:pw}); if(error) throw error; }
+    else { const {error}=await sb.auth.signUp({email,password:pw}); if(error) throw error; errEl.style.color='var(--ok)'; errEl.textContent='가입 완료 — 로그인 해주세요'; authMode='signin'; return; }
+  }catch(e){ errEl.style.color='var(--blood-bright)'; errEl.textContent=e.message||'인증 실패'; }
+}
+
+/* ============================================================
+   Record form
+   ============================================================ */
+function fillEditionSelects(){
+  const opts='<option value="">— 버전 —</option>'+state.editions.map(e=>'<option value="'+e.id+'">'+escapeHtml(e.name)+'</option>').join('');
+  $('#f-edition').innerHTML=opts;
+  $('#v-edition').innerHTML='<option value="">모든 버전</option>'+state.editions.map(e=>'<option value="'+e.id+'">'+escapeHtml(e.name)+'</option>').join('');
+}
+function fillSeasonSelect(editionId, selected){
+  const list=state.seasons.filter(s=>!editionId||s.editionId===editionId).sort((a,b)=>a.ord-b.ord);
+  $('#f-season').innerHTML='<option value="">— 시즌 —</option>'+list.map(s=>'<option value="'+s.id+'"'+(s.id===selected?' selected':'')+'>'+escapeHtml(s.name)+' ('+(s.start||'').slice(0,4)+')</option>').join('');
+}
+function fillViewingFilters(){
+  $('#v-season').innerHTML='<option value="">모든 시즌</option>'+state.seasons.map(s=>{ const e=editionById(s.editionId); return '<option value="'+s.id+'">'+escapeHtml((e?e.name:'')+' '+s.name)+'</option>'; }).join('');
+  $('#a-role').innerHTML='<option value="">모든 배역</option>'+castingColumns().map(c=>'<option value="'+c.key+'">'+escapeHtml(c.name)+'</option>').join('');
+}
+function refreshDatalists(){
+  const theaters=new Set(), seats=new Set();
+  state.seasons.forEach(s=>{ if(s.theater) theaters.add(s.theater); });
+  state.viewings.forEach(v=>{ if(v.theater) theaters.add(v.theater); if(v.seat) seats.add(v.seat); });
+  $('#dl-theaters').innerHTML=[...theaters].map(t=>'<option value="'+escapeHtml(t)+'">').join('');
+  $('#dl-seats').innerHTML=[...seats].map(t=>'<option value="'+escapeHtml(t)+'">').join('');
+}
+
+function renderCastingGrid(editionId, seasonId, casting){
+  const fields=getFormCastFields(seasonId);
+  $('#f-casting').innerHTML = fields.map(f=>{
+    const dlOpts=(f.pool||[]).map(a=>'<option value="'+escapeHtml(a)+'">').join('');
+    const slots=splitSwap(casting&&casting[f.key]); if(!slots.length) slots.push('');
+    const slotHtml=slots.map((val,i)=>slotRow(f.key,val,i,f.multi)).join('');
+    return '<div class="cast-cell" data-role="'+f.key+'" data-multi="'+(f.multi?'1':'0')+'">'
+      +'<div class="rolehd"><span class="rn">'+escapeHtml(f.label)+(f.sub?' <small>'+escapeHtml(f.sub)+'</small>':'')+(f.multi?' <small>· 다중</small>':'')+'</span></div>'
+      +'<div class="slots">'+slotHtml+'</div>'
+      +'<button type="button" class="addslot" data-add="'+f.key+'">＋ '+(f.multi?'배우 추가':'교체 배우 추가')+'</button>'
+      +(f.seasonPool&&f.seasonPool.length?'<div class="seasoncast-hint">이 시즌: '+escapeHtml(f.seasonPool.join(', '))+'</div>':'')
+      +'<datalist id="dl-role-'+f.key+'">'+dlOpts+'</datalist>'
+      +'</div>';
+  }).join('') || '<div class="hint">버전과 시즌을 먼저 선택하세요.</div>';
+  $$('#f-casting .addslot').forEach(b=>b.onclick=()=>{ const cell=b.closest('.cast-cell'); const cont=$('.slots',cell); const idx=cont.children.length;
+    cont.insertAdjacentHTML('beforeend', slotRow(cell.dataset.role,'',idx, cell.dataset.multi==='1')); wireSlotX(); });
+  wireSlotX();
+}
+function slotRow(key,val,i,multi){
+  const sep = i>0 ? '<span style="color:var(--ink-faint)">'+(multi?'·':'→')+'</span>' : '';
+  return '<div class="slotrow">'+sep
+    +'<input type="text" list="dl-role-'+key+'" value="'+escapeHtml(val)+'" placeholder="배우명">'
+    +(i>0?'<button type="button" class="slot-x" title="삭제">×</button>':'<span style="width:22px"></span>')+'</div>';
+}
+function wireSlotX(){ $$('#f-casting .slot-x').forEach(b=>b.onclick=()=>{ b.closest('.slotrow').remove(); }); }
+function readCasting(){
+  const out={};
+  $$('#f-casting .cast-cell').forEach(cell=>{
+    const key=cell.dataset.role, multi=cell.dataset.multi==='1';
+    const vals=$$('.slotrow input',cell).map(inp=>inp.value.trim()).filter(Boolean);
+    if(vals.length) out[key]=vals.join(multi?', ':' → ');
+  });
+  return out;
+}
+
+function renderSliders(ratings){
+  $('#f-sliders').innerHTML=RATING_AXES.map(a=>{
+    const v=Number(ratings&&ratings[a.key])||0;
+    return '<div class="slrow"><span class="axl">'+a.name+'</span>'
+      +'<input type="range" min="0" max="5" step="1" value="'+v+'" data-axis="'+a.key+'">'
+      +'<span class="axv" id="axv-'+a.key+'">'+(v||'–')+'</span></div>';
+  }).join('');
+  $$('#f-sliders input[type=range]').forEach(inp=>inp.oninput=()=>{ $('#axv-'+inp.dataset.axis).textContent=inp.value>0?inp.value:'–'; updateHexPreview(); });
+  updateHexPreview();
+}
+function readRatings(){ const r={}; $$('#f-sliders input[type=range]').forEach(inp=>{ const v=Number(inp.value); if(v>0) r[inp.dataset.axis]=v; }); return r; }
+function updateHexPreview(){ const r=readRatings(); $('#f-hexagon').innerHTML=hexSVG(r,200,true); const avg=ratingAvg(r); $('#f-avg').textContent=avg?avg.toFixed(1):'–'; }
+
+function renderImageStrip(){
+  const existing = editingId ? (state.viewings.find(v=>v.id===editingId)||{images:[]}).images||[] : [];
+  const box=$('#f-image-strip'); box.innerHTML='';
+  existing.forEach((img,idx)=>{ const d=document.createElement('div'); d.className='thumb';
+    d.innerHTML='<img alt=""><span class="kd">'+escapeHtml(img.kind||'')+'</span><button class="rm" data-existing="'+idx+'">×</button>'; box.appendChild(d);
+    imageSrc(img).then(src=>{ d.querySelector('img').src=src; });
+  });
+  pendingImages.forEach((p,idx)=>{ const d=document.createElement('div'); d.className='thumb';
+    d.innerHTML='<img src="'+p.dataUrl+'" alt=""><span class="kd">new</span><button class="rm" data-pending="'+idx+'">×</button>'; box.appendChild(d);
+  });
+  $$('#f-image-strip .rm').forEach(b=>b.onclick=()=>{
+    if(b.dataset.pending!=null){ pendingImages.splice(Number(b.dataset.pending),1); renderImageStrip(); }
+    else if(b.dataset.existing!=null && editingId){ const v=state.viewings.find(x=>x.id===editingId); const rem=v.images.splice(Number(b.dataset.existing),1)[0];
+      if(rem&&rem.path&&sb) sb.storage.from(BUCKET).remove([rem.path]).catch(()=>{}); saveState(); queueViewing(v.id); renderImageStrip(); }
+  });
+}
+
+/* ---------- 회차별 공식 캐스팅 자동입력 ---------- */
+function scheduleForDate(date){ return date ? SCHEDULE_SEED.filter(e=>e.d===date) : []; }
+function applyScheduleUI(){
+  const box=$('#f-sched'); if(!box) return;
+  const entries=scheduleForDate($('#f-date').value);
+  if(!entries.length){ box.style.display='none'; box.innerHTML=''; return; }
+  box.style.display='block';
+  box.innerHTML='<span class="lbl2">공식 캐스팅</span>'
+    +entries.map((e,i)=>'<button type="button" class="btn btn-sm" data-si="'+i+'">'+escapeHtml(e.t||('회차'+(i+1)))+' 채우기</button>').join('')
+    +'<span style="margin-left:4px">회차를 누르면 그날 캐스트가 자동 입력됩니다</span>';
+  $$('#f-sched button').forEach(b=>b.onclick=()=>applyScheduleEntry(entries[Number(b.dataset.si)]));
+  if(entries.length===1 && !Object.keys(readCasting()).length) applyScheduleEntry(entries[0], true);
+}
+function applyScheduleEntry(e, silent){
+  const s=seasonById(e.s); const ed=s?s.editionId:$('#f-edition').value;
+  $('#f-edition').value=ed; fillSeasonSelect(ed, e.s); $('#f-season').value=e.s;
+  if(e.t){ $('#f-time').value=e.t; const hh=parseInt(e.t,10); if(!$('#f-session').value) $('#f-session').value=(hh<14?'마티네':'이브닝'); }
+  if(s && s.theater && !theaterTouched) $('#f-theater').value=s.theater;
+  renderCastingGrid(ed, e.s, e.c||{});
+  const hint=$('#f-season-hint'); if(s){ hint.className='hint auto'; hint.textContent=(editionById(ed)?editionById(ed).name:'')+' '+s.name+' · 공식 캐스팅 반영'; }
+  if(!silent) toast('공식 캐스팅 반영: '+(e.d||'')+(e.t?' '+e.t:''));
+}
+function onEditionOrDateChange(){
+  const date=$('#f-date').value, ed=$('#f-edition').value;
+  const inferred=inferSeason(date, ed);
+  const hint=$('#f-season-hint');
+  if(inferred){
+    fillSeasonSelect(ed, inferred.id);
+    const cancelled=isCancelledDate(inferred,date);
+    hint.className='hint '+(cancelled?'warn':'auto');
+    hint.textContent = cancelled ? ('⚠ '+inferred.name+' 공연 취소 기간입니다 (기록은 가능)') : ('자동 추론: '+(editionById(ed)?editionById(ed).name:'')+' '+inferred.name);
+    const th=inferred.theater||(editionById(ed)?editionById(ed).defaultTheater:'');
+    if(th && !theaterTouched) $('#f-theater').value=th;
+  } else {
+    fillSeasonSelect(ed, $('#f-season').value);
+    hint.className='hint'; hint.textContent = date&&ed ? '해당 날짜에 맞는 시즌을 찾지 못했습니다 — 직접 선택하세요' : '';
+  }
+  renderCastingGrid(ed, $('#f-season').value, readCasting());
+  applyScheduleUI();
+}
+function onSeasonChange(){
+  const sid=$('#f-season').value, s=seasonById(sid);
+  if(s && !theaterTouched){ const th=s.theater||(editionById(s.editionId)?editionById(s.editionId).defaultTheater:''); if(th) $('#f-theater').value=th; }
+  renderCastingGrid($('#f-edition').value, sid, readCasting());
+}
+
+function clearForm(){
+  editingId=null; pendingImages=[]; theaterTouched=false;
+  $('#recTitle').textContent='새 관극 기록';
+  $('#f-existing').value=''; $('#f-date').value=todayISO(); $('#f-session').value='';
+  $('#f-edition').value=''; $('#f-season').innerHTML='<option value="">— 시즌 —</option>';
+  $('#f-theater').value=''; $('#f-seat').value=''; $('#f-price').value=''; $('#f-time').value='';
+  $('#f-sightline').value=''; $('#f-oneliner').value=''; $('#f-review').value=''; $('#f-needsreview').checked=false;
+  $('#f-season-hint').textContent=''; $('#f-delete').style.display='none';
+  renderCastingGrid('', '', {}); renderSliders({}); renderImageStrip();
+}
+function loadIntoForm(id){
+  const v=state.viewings.find(x=>x.id===id); if(!v) return;
+  editingId=id; pendingImages=[]; theaterTouched=true; // 저장된 극장 보존
+  $('#recTitle').textContent='관극 기록 수정';
+  $('#f-existing').value=id;
+  $('#f-date').value=v.date; $('#f-session').value=v.session||'';
+  $('#f-edition').value=v.editionId||''; fillSeasonSelect(v.editionId, v.seasonId);
+  $('#f-season').value=v.seasonId||'';
+  $('#f-theater').value=v.theater||''; $('#f-seat').value=v.seat||'';
+  $('#f-price').value=v.price==null?'':v.price; $('#f-time').value=v.timeText||'';
+  $('#f-sightline').value=v.sightline||''; $('#f-oneliner').value=v.oneLiner||''; $('#f-review').value=v.review||'';
+  $('#f-needsreview').checked=!!v.needsReview;
+  renderCastingGrid(v.editionId, v.seasonId, v.casting); renderSliders(v.ratings); renderImageStrip();
+  const s=seasonById(v.seasonId); const hint=$('#f-season-hint');
+  if(s){ hint.className='hint auto'; hint.textContent=(editionById(v.editionId)?editionById(v.editionId).name:'')+' '+s.name; }
+  $('#f-delete').style.display='inline-block';
+  switchTab('record'); window.scrollTo({top:0,behavior:'smooth'});
+}
+async function saveViewing(){
+  const date=$('#f-date').value;
+  if(!date){ toast('관극일을 입력하세요'); return; }
+  const btn=$('#f-save'); btn.disabled=true; btn.textContent='저장 중…';
+  try{
+    const now=Date.now();
+    const sessTag=$('#f-session').value==='마티네'?'m':($('#f-session').value==='이브닝'?'e':'x');
+    let v = editingId ? state.viewings.find(x=>x.id===editingId) : null;
+    const isNew=!v;
+    if(isNew){ v={ id:'v_'+date.replace(/-/g,'')+'_'+sessTag+'_'+uid4(), createdAt:now, images:[], source:'user' }; }
+    v.date=date; v.session=$('#f-session').value; v.timeText=$('#f-time').value.trim();
+    v.editionId=$('#f-edition').value; v.seasonId=$('#f-season').value;
+    v.theater=$('#f-theater').value.trim(); v.seat=$('#f-seat').value.trim();
+    v.casting=readCasting(); v.ratings=readRatings();
+    v.oneLiner=$('#f-oneliner').value.trim(); v.review=$('#f-review').value.trim();
+    v.price=$('#f-price').value===''?'':Number($('#f-price').value); v.sightline=$('#f-sightline').value.trim();
+    v.needsReview=$('#f-needsreview').checked; v.updatedAt=now;
+    if(!v.images) v.images=[];
+    await uploadPending(v);
+    if(isNew) state.viewings.push(v);
+    const actorsAdded=absorbActors(v);
+    saveState(); queueViewing(v.id); if(actorsAdded) queueConfig();
+    toast(isNew?'기록이 보존되었습니다':'수정되었습니다');
+    clearForm(); renderAll(); switchTab('viewings');
+  }catch(e){ console.error(e); toast('저장 중 오류: '+(e.message||e)); }
+  finally{ btn.disabled=false; btn.textContent='기록 보존하기'; }
+}
+function deleteViewing(id){
+  if(!confirm('이 관극 기록을 삭제할까요?')) return;
+  const v=state.viewings.find(x=>x.id===id);
+  if(v&&v.images) v.images.forEach(img=>{ if(img.path&&sb) sb.storage.from(BUCKET).remove([img.path]).catch(()=>{}); });
+  state.viewings=state.viewings.filter(x=>x.id!==id);
+  saveState(); queueDelViewing(id); toast('삭제되었습니다'); clearForm(); renderAll();
+}
+function refreshExistingSelect(){
+  const list=state.viewings.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  $('#f-existing').innerHTML='<option value="">+ 신규 기록</option>'+list.map(v=>{ const e=editionById(v.editionId);
+    return '<option value="'+v.id+'">'+escapeHtml((v.date||'')+' '+(v.session||'')+' · '+(e?e.name:'')+(v.oneLiner?' — '+v.oneLiner.slice(0,16):''))+'</option>'; }).join('');
+}
+
+/* ============================================================
+   Viewings list + calendar
+   ============================================================ */
+function castLine(v){
+  return orderedCastKeys(v.casting).map(k=>{
+    const val=v.casting[k]; if(!val) return '';
+    return '<span class="rl">'+escapeHtml(castKeyLabel(v.seasonId,k))+'</span> <b>'+escapeHtml(val)+'</b>';
+  }).filter(Boolean).join(' · ');
+}
+function filteredViewings(){
+  let list=state.viewings.slice();
+  const f=viewFilter;
+  if(f.edition) list=list.filter(v=>v.editionId===f.edition);
+  if(f.season) list=list.filter(v=>v.seasonId===f.season);
+  if(f.needsOnly) list=list.filter(v=>v.needsReview);
+  if(f.calDate) list=list.filter(v=>v.date===f.calDate);
+  if(f.search){ const q=f.search.toLowerCase();
+    list=list.filter(v=> (castLine(v).toLowerCase().includes(q))
+      || (v.theater||'').toLowerCase().includes(q) || (v.review||'').toLowerCase().includes(q)
+      || (v.oneLiner||'').toLowerCase().includes(q) || (v.seat||'').toLowerCase().includes(q)); }
+  if(f.sort==='date-asc') list.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  else if(f.sort==='rating-desc') list.sort((a,b)=>(ratingAvg(b.ratings)||0)-(ratingAvg(a.ratings)||0));
+  else list.sort((a,b)=>(b.date||'').localeCompare(a.date||'')|| (b.createdAt||0)-(a.createdAt||0));
+  return list;
+}
+function renderViewings(){
+  const list=filteredViewings(); const grid=$('#v-grid');
+  if(!list.length){ grid.innerHTML='<div class="empty">아직 기록이 없습니다.<br>첫 관극을 기록해보세요.</div>'; return; }
+  grid.innerHTML=list.map(v=>{
+    const e=editionById(v.editionId), s=seasonById(v.seasonId);
+    const avg=ratingAvg(v.ratings);
+    const thumb=(v.images&&v.images[0])?'<img class="vthumb" data-thumb="'+v.id+'" alt="">':'';
+    return '<div class="vcard" data-open="'+v.id+'">'
+      +(v.needsReview?'<span class="nreview">검수 필요</span>':'')
+      +'<div class="vtop"><div><span class="vdate">'+escapeHtml(v.date||'')+'</span><span class="vday">('+dowKR(v.date)+')</span></div>'
+      +'<div class="vmini">'+hexMini(v.ratings)+'</div></div>'
+      +'<div style="margin:6px 0"><span class="badge '+(v.editionId||'')+'">'+escapeHtml(e?e.name:'?')+'</span>'
+      +(s?'<span class="badge">'+escapeHtml(s.name)+'</span>':'')+(v.session?'<span class="badge sess">'+escapeHtml(v.session)+'</span>':'')+'</div>'
+      +'<div class="vcast">'+(castLine(v)||'<span class="rl">캐스팅 미기록</span>')+'</div>'
+      +(v.oneLiner?'<div class="voneliner">"'+escapeHtml(v.oneLiner)+'"</div>':'')
+      +'<div class="vfoot"><span class="rl">'+escapeHtml(v.theater||'')+(v.seat?' · '+escapeHtml(v.seat):'')+'</span>'
+      +(avg?'<span class="tc" style="color:var(--gold-bright);font-family:var(--title)">★ '+avg.toFixed(1)+'</span>':'')+'</div>'
+      +thumb
+      +'</div>';
+  }).join('');
+  $$('#v-grid .vcard').forEach(c=>c.onclick=()=>openDetail(c.dataset.open));
+  $$('#v-grid img[data-thumb]').forEach(im=>{ const v=state.viewings.find(x=>x.id===im.dataset.thumb); if(v&&v.images[0]) imageSrc(v.images[0]).then(src=>im.src=src); });
+}
+function hexMini(ratings){ return '<svg viewBox="0 0 60 60" width="52" height="52">'+hexSVG(ratings,60,false)+'</svg>'; }
+
+function renderCalendar(){
+  const box=$('#v-calendar'); if(box.style.display==='none'){ return; }
+  const base = viewFilter._calMonth ? new Date(viewFilter._calMonth+'-01T00:00:00') : new Date();
+  const y=base.getFullYear(), m=base.getMonth();
+  const monthStr=y+'-'+String(m+1).padStart(2,'0');
+  const first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
+  const counts={}; state.viewings.forEach(v=>{ if((v.date||'').startsWith(monthStr)) counts[v.date]=(counts[v.date]||0)+1; });
+  let cells='';
+  for(let i=0;i<first;i++) cells+='<div class="cal-cell" style="visibility:hidden"></div>';
+  for(let d=1;d<=days;d++){ const iso=monthStr+'-'+String(d).padStart(2,'0');
+    const has=counts[iso];
+    const inRun=state.seasons.some(s=>s.start<=iso&&iso<=s.end);
+    cells+='<div class="cal-cell'+(has?' has':'')+(inRun?' run':'')+'" '+(has?'data-cal="'+iso+'"':'')+'>'+d+(has?'<span class="cdot"></span>':'')+'</div>';
+  }
+  box.innerHTML='<div class="cal-hd"><button class="btn btn-sm" id="cal-prev">‹</button><b>'+y+'년 '+(m+1)+'월</b><button class="btn btn-sm" id="cal-next">›</button></div>'
+    +'<div class="cal-grid">'+['일','월','화','수','목','금','토'].map(d=>'<div class="dow">'+d+'</div>').join('')+cells+'</div>';
+  $('#cal-prev').onclick=()=>{ viewFilter._calMonth=isoMonthShift(monthStr,-1); renderCalendar(); };
+  $('#cal-next').onclick=()=>{ viewFilter._calMonth=isoMonthShift(monthStr,1); renderCalendar(); };
+  $$('#v-calendar .cal-cell.has').forEach(c=>c.onclick=()=>{ viewFilter.calDate=c.dataset.cal; showActiveFilter(); renderViewings(); });
+}
+function isoMonthShift(monthStr,delta){ const [y,m]=monthStr.split('-').map(Number); const d=new Date(y,m-1+delta,1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function showActiveFilter(){ const el=$('#v-active-filter');
+  if(viewFilter.calDate){ el.style.display='block'; el.innerHTML='날짜 필터: <b style="color:var(--gold)">'+viewFilter.calDate+'</b> <span class="lk" id="clearCal" style="text-decoration:underline;cursor:pointer">해제</span>';
+    $('#clearCal').onclick=()=>{ viewFilter.calDate=''; el.style.display='none'; renderViewings(); }; }
+  else el.style.display='none';
+}
+
+/* ============================================================
+   Detail modal
+   ============================================================ */
+function openDetail(id){
+  const v=state.viewings.find(x=>x.id===id); if(!v) return;
+  const e=editionById(v.editionId), s=seasonById(v.seasonId), avg=ratingAvg(v.ratings);
+  const cast=orderedCastKeys(v.casting).map(k=>{ const val=v.casting[k]; return val?('<div><span class="rl" style="color:var(--gold);font-family:var(--disp);font-style:italic;font-size:15px">'+escapeHtml(castKeyLabel(v.seasonId,k))+'</span> &nbsp; '+escapeHtml(val)+'</div>'):''; }).filter(Boolean).join('');
+  const axisRatings=RATING_AXES.map(a=>{ const val=v.ratings&&v.ratings[a.key]; return val?('<span class="badge">'+a.name+' '+val+'</span>'):''; }).filter(Boolean).join(' ');
+  $('#detailCard').innerHTML=
+    '<button class="modal-close" id="det-close">×</button>'
+    +'<div class="det-hero"><div>'
+      +'<div style="font-family:var(--title);font-size:22px">'+escapeHtml(v.date||'')+' <span style="font-size:13px;color:var(--ink-faint)">('+dowKR(v.date)+') '+escapeHtml(v.session||'')+(v.timeText?' '+escapeHtml(v.timeText):'')+'</span></div>'
+      +'<div style="margin-top:6px"><span class="badge '+(v.editionId||'')+'">'+escapeHtml(e?e.name:'?')+'</span>'+(s?'<span class="badge">'+escapeHtml(s.name)+'</span>':'')+(v.needsReview?'<span class="badge" style="border-color:var(--warn);color:var(--warn)">검수 필요</span>':'')+'</div>'
+    +'</div><div style="text-align:center"><svg viewBox="0 0 200 200" width="150" height="150">'+hexSVG(v.ratings,200,true)+'</svg><div style="font-family:var(--title);color:var(--gold-bright);font-size:18px">'+(avg?('★ '+avg.toFixed(1)+' / 5'):'미평가')+'</div></div></div>'
+    +'<div class="det-cast">'+(cast||'<span class="rl">캐스팅 미기록</span>')+'</div>'
+    +(axisRatings?'<div style="margin:8px 0">'+axisRatings+'</div>':'')
+    +'<div class="det-meta">'+[v.theater?'<span><b>극장</b> '+escapeHtml(v.theater)+'</span>':'',v.seat?'<span><b>좌석</b> '+escapeHtml(v.seat)+'</span>':'',(v.price!==''&&v.price!=null)?'<span><b>가격</b> '+fmtWon(v.price)+'</span>':'',v.sightline?'<span><b>관크</b> '+escapeHtml(v.sightline)+'</span>':''].filter(Boolean).join('')+'</div>'
+    +(v.oneLiner?'<div class="voneliner" style="font-size:17px;margin-top:14px">"'+escapeHtml(v.oneLiner)+'"</div>':'')
+    +(v.review?'<div class="det-review">'+escapeHtml(v.review)+'</div>':'')
+    +'<div class="det-imgs" id="det-imgs"></div>'
+    +'<div class="row-actions"><button class="btn btn-primary btn-sm" id="det-edit">수정</button><button class="btn btn-danger btn-sm" id="det-del">삭제</button></div>';
+  $('#detailModal').classList.add('show');
+  $('#det-close').onclick=closeDetail;
+  $('#det-edit').onclick=()=>{ closeDetail(); loadIntoForm(id); };
+  $('#det-del').onclick=()=>{ closeDetail(); deleteViewing(id); };
+  const imgBox=$('#det-imgs'); (v.images||[]).forEach(img=>{ const el=document.createElement('img'); imgBox.appendChild(el); imageSrc(img).then(src=>el.src=src); el.onclick=()=>window.open(el.src,'_blank'); });
+}
+function closeDetail(){ $('#detailModal').classList.remove('show'); }
+
+/* ============================================================
+   Stats
+   ============================================================ */
+function barRow(name,val,max,blood){ const pct=max?Math.round(val/max*100):0;
+  return '<div class="bar-row"><span class="bn">'+escapeHtml(name)+'</span><div class="bar-track"><div class="bar-fill'+(blood?' blood':'')+'" style="width:'+pct+'%"></div></div><span class="bv">'+val+'</span></div>'; }
+function renderStats(){
+  const vs=state.viewings; const body=$('#stats-body');
+  if(!vs.length){ body.innerHTML='<div class="empty">기록이 쌓이면 통계가 표시됩니다.</div>'; return; }
+  // per edition
+  const edCount={}; state.editions.forEach(e=>edCount[e.id]=0); vs.forEach(v=>{ if(edCount[v.editionId]!=null) edCount[v.editionId]++; });
+  // per season
+  const seCount={}; vs.forEach(v=>{ if(v.seasonId) seCount[v.seasonId]=(seCount[v.seasonId]||0)+1; });
+  // actors per role/position (모든 캐스팅 키)
+  const keyCounts={}; const keySet=new Set(); state.roles.forEach(r=>keySet.add(r.id));
+  vs.forEach(v=>{ Object.keys(v.casting||{}).forEach(k=>{ keySet.add(k); const m=(keyCounts[k]=keyCounts[k]||{}); splitSwap(v.casting[k]).forEach(a=>{ m[a]=(m[a]||0)+1; }); }); });
+  // combos
+  const combo={}; vs.forEach(v=>{ const key=state.roles.map(r=>(v.casting&&v.casting[r.id])||'-').join(' / '); if(key.replace(/[-/ ]/g,'')) combo[key]=(combo[key]||0)+1; });
+  // rating axis avg
+  const axisAvg={}; RATING_AXES.forEach(a=>{ const vals=vs.map(v=>Number(v.ratings&&v.ratings[a.key])||0).filter(x=>x>0); axisAvg[a.key]=vals.length?(vals.reduce((x,y)=>x+y,0)/vals.length):0; });
+  // spend
+  const prices=vs.map(v=>Number(v.price)||0).filter(x=>x>0); const spend=prices.reduce((a,b)=>a+b,0);
+  // months
+  const months={}; vs.forEach(v=>{ const mk=(v.date||'').slice(0,7); if(mk) months[mk]=(months[mk]||0)+1; });
+  const dates=vs.map(v=>v.date).filter(Boolean).sort();
+
+  let html='<div class="stat-grid" style="margin-bottom:22px">'
+    +'<div class="card kpi"><div class="n">'+vs.length+'</div><div class="l">총 관극</div></div>'
+    +'<div class="card kpi"><div class="n">'+(dates[0]||'–').slice(0,10)+'</div><div class="l">첫 관극</div></div>'
+    +'<div class="card kpi"><div class="n">'+(dates[dates.length-1]||'–').slice(0,10)+'</div><div class="l">최근 관극</div></div>'
+    +'<div class="card kpi"><div class="n">'+(spend?('₩'+Math.round(spend/10000)+'만'):'–')+'</div><div class="l">누적 지출'+(prices.length?' ('+prices.length+'회)':'')+'</div></div>'
+    +'</div>';
+
+  html+='<div class="stat-grid">';
+  // edition + season
+  const edMax=Math.max(1,...Object.values(edCount));
+  html+='<div class="card"><h3 class="sub" style="margin-top:0">버전별</h3>'+state.editions.map(e=>barRow(e.name,edCount[e.id]||0,edMax,e.accent==='blood')).join('')+'</div>';
+  const seMax=Math.max(1,...Object.values(seCount));
+  const seRows=state.seasons.filter(s=>seCount[s.id]).map(s=>barRow((editionById(s.editionId)?editionById(s.editionId).name.slice(0,3):'')+' '+s.name, seCount[s.id],seMax,s.editionId==='actormusician'));
+  html+='<div class="card"><h3 class="sub" style="margin-top:0">시즌별</h3>'+(seRows.join('')||'<div class="hint">기록 없음</div>')+'</div>';
+  // rating axes
+  html+='<div class="card"><h3 class="sub" style="margin-top:0">평가 평균 (6축)</h3>'+RATING_AXES.map(a=>barRow(a.name,Number(axisAvg[a.key].toFixed(1)),5)).join('')+'</div>';
+  html+='</div>';
+
+  // actors per role/position
+  const orderedKeys=[...keySet].sort((a,b)=>{ const ia=CAST_KEY_ORDER.indexOf(a),ib=CAST_KEY_ORDER.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
+  html+='<div class="stat-grid" style="margin-top:16px">';
+  orderedKeys.forEach(k=>{
+    const arr=Object.entries(keyCounts[k]||{}).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    if(!arr.length) return;
+    const mx=Math.max(1,...arr.map(x=>x[1]));
+    html+='<div class="card"><h3 class="sub" style="margin-top:0">최다 관극 · '+escapeHtml(castKeyCanonLabel(k))+'</h3>'+arr.map(([n,c])=>barRow(n,c,mx)).join('')+'</div>';
+  });
+  html+='</div>';
+
+  // combos
+  const comboArr=Object.entries(combo).sort((a,b)=>b[1]-a[1]).slice(0,10).filter(x=>x[1]>1);
+  if(comboArr.length){ const mx=Math.max(...comboArr.map(x=>x[1]));
+    html+='<div class="card" style="margin-top:16px"><h3 class="sub" style="margin-top:0">자주 본 캐스팅 조합</h3>'+comboArr.map(([n,c])=>barRow(n,c,mx)).join('')+'</div>'; }
+
+  // months
+  const mk=Object.keys(months).sort(); if(mk.length){ const mx=Math.max(...Object.values(months));
+    html+='<div class="card" style="margin-top:16px"><h3 class="sub" style="margin-top:0">월별 관극 추이</h3>'+mk.map(m=>barRow(m,months[m],mx)).join('')+'</div>'; }
+
+  body.innerHTML=html;
+}
+
+/* ============================================================
+   By actor
+   ============================================================ */
+let actorSearch='', actorRoleFilter='';
+function renderActors(){
+  const body=$('#actors-body');
+  const stat={};
+  state.viewings.forEach(v=>{ Object.keys(v.casting||{}).forEach(key=>{ splitSwap(v.casting[key]).forEach(a=>{
+    if(!stat[a]) stat[a]={name:a,count:0,roles:{},dates:[],ratingSum:0,ratingN:0};
+    stat[a].count++; stat[a].roles[key]=(stat[a].roles[key]||0)+1; if(v.date) stat[a].dates.push(v.date);
+    const ca=Number(v.ratings&&v.ratings.casting)||0; if(ca){ stat[a].ratingSum+=ca; stat[a].ratingN++; }
+  }); }); });
+  let arr=Object.values(stat);
+  if(actorRoleFilter) arr=arr.filter(a=>a.roles[actorRoleFilter]);
+  if(actorSearch){ const q=actorSearch.toLowerCase(); arr=arr.filter(a=>a.name.toLowerCase().includes(q)); }
+  arr.sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,'ko'));
+  if(!arr.length){ body.innerHTML='<div class="empty">관극 기록에서 집계된 배우가 없습니다.</div>'; return; }
+  body.innerHTML='<div class="actor-list">'+arr.map(a=>{
+    const roles=Object.keys(a.roles).map(k=>castKeyCanonLabel(k)).join('·');
+    const avg=a.ratingN?(a.ratingSum/a.ratingN).toFixed(1):null;
+    return '<div class="actor-item" data-actor="'+escapeHtml(a.name)+'"><span class="ac">'+a.count+'</span>'
+      +'<div class="an">'+escapeHtml(a.name)+'</div>'
+      +'<div class="am">'+escapeHtml(roles)+(avg?' · 캐스팅평 ★'+avg:'')+'</div></div>';
+  }).join('')+'</div>';
+  $$('#actors-body .actor-item').forEach(el=>el.onclick=()=>{ viewFilter.search=el.dataset.actor; viewFilter.calDate=''; $('#v-search').value=el.dataset.actor; showActiveFilter(); renderViewings(); switchTab('viewings'); });
+}
+
+/* ============================================================
+   Timeline
+   ============================================================ */
+function renderTimeline(){
+  const body=$('#timeline-body');
+  const counts={}; state.viewings.forEach(v=>{ if(v.seasonId) counts[v.seasonId]=(counts[v.seasonId]||0)+1; });
+  body.innerHTML=state.editions.map(e=>{
+    const seasons=state.seasons.filter(s=>s.editionId===e.id).sort((a,b)=>a.ord-b.ord);
+    return '<div class="tl-edition '+e.id+'"><h3>'+escapeHtml(e.name)+' <span style="font-size:13px;color:var(--ink-faint)">'+escapeHtml(e.nameEn||'')+'</span></h3>'
+      +seasons.map(s=>{
+        const c=counts[s.id]||0;
+        const cancel=(s.cancelled&&s.cancelled.length)?'<div class="tl-cancel">취소: '+s.cancelled.map(x=>x.start+'~'+x.end).join(', ')+'</div>':'';
+        return '<div class="tl-item" data-season="'+s.id+'"><div><div class="tn">'+escapeHtml(s.name)+'</div>'+(s.note?'<div class="td">'+escapeHtml(s.note)+'</div>':'')+'</div>'
+          +'<div class="td">'+escapeHtml((s.start||'')+' ~ '+(s.end||''))+(s.theater?' · '+escapeHtml(s.theater):'')+cancel+'</div>'
+          +'<div class="tc">'+c+'<small> 회</small></div></div>';
+      }).join('')+'</div>';
+  }).join('');
+  $$('#timeline-body .tl-item').forEach(el=>el.onclick=()=>{ viewFilter.season=el.dataset.season; viewFilter.calDate=''; $('#v-season').value=el.dataset.season; renderViewings(); switchTab('viewings'); });
+}
+
+/* ============================================================
+   Schedule (공연 회차 · 전체 캐스팅) — SCHEDULE_SEED 기반, 관극 여부 무관
+   ============================================================ */
+let schedView='date', schedSeason='', schedQ='';
+function renderSchedule(){
+  const body=$('#schedule-body');
+  const withData=[...new Set(SCHEDULE_SEED.map(e=>e.s))];
+  const seasonOpts='<option value="">전체 시즌</option>'+state.seasons.filter(s=>withData.includes(s.id))
+    .sort((a,b)=>{const ea=state.editions.findIndex(e=>e.id===a.editionId),eb=state.editions.findIndex(e=>e.id===b.editionId);return ea-eb||a.ord-b.ord;})
+    .map(s=>{const e=editionById(s.editionId);return '<option value="'+s.id+'"'+(s.id===schedSeason?' selected':'')+'>'+escapeHtml((e?e.name:'')+' '+s.name)+'</option>';}).join('');
+  const controls='<div class="list-controls">'
+    +'<span class="seg">'+[['date','일자별'],['actor','배우별'],['role','배역별']].map(x=>'<button class="btn btn-sm'+(schedView===x[0]?' btn-primary':'')+'" data-sv="'+x[0]+'">'+x[1]+'</button>').join('')+'</span>'
+    +'<select id="sch-season">'+seasonOpts+'</select>'
+    +'<input type="text" id="sch-q" class="grow" placeholder="배우·날짜 검색…" value="'+escapeHtml(schedQ)+'">'
+    +'</div>';
+  let entries=SCHEDULE_SEED.slice(); if(schedSeason) entries=entries.filter(e=>e.s===schedSeason);
+  let inner;
+  if(!SCHEDULE_SEED.length) inner='<div class="empty">회차별 캐스팅 데이터가 아직 없습니다.<br>공식 스케줄을 채우면 여기에 표시됩니다.</div>';
+  else if(schedView==='actor') inner=schedActorHtml(entries);
+  else if(schedView==='role') inner=schedRoleHtml(entries);
+  else inner=schedDateHtml(entries);
+  body.innerHTML=controls+inner;
+  $$('#schedule-body [data-sv]').forEach(b=>b.onclick=()=>{ schedView=b.dataset.sv; renderSchedule(); });
+  const ss=$('#sch-season'); if(ss) ss.onchange=()=>{ schedSeason=ss.value; renderSchedule(); };
+  const sq=$('#sch-q'); if(sq) sq.oninput=debounce(()=>{ schedQ=sq.value.trim(); renderSchedule(); },200);
+  $$('#schedule-body [data-schactor]').forEach(el=>el.onclick=()=>{ schedQ=el.dataset.schactor; schedView='date'; renderSchedule(); });
+}
+function schedDateHtml(entries){
+  const attended=new Set(state.viewings.map(v=>v.date));
+  let list=entries.slice().sort((a,b)=>(a.d+a.t).localeCompare(b.d+b.t));
+  if(schedQ){ const q=schedQ.toLowerCase(); list=list.filter(e=> (e.d||'').includes(q) || Object.values(e.c).some(v=>String(v).toLowerCase().includes(q))); }
+  if(!list.length) return '<div class="empty">해당 조건의 회차가 없습니다.</div>';
+  return '<div class="sch-count">'+list.length+'개 회차</div><div class="sch-list">'+list.map(e=>{
+    const s=seasonById(e.s), ed=s?editionById(s.editionId):null;
+    const cast=orderedCastKeys(e.c).map(k=>'<span class="rl">'+escapeHtml(castKeyLabel(e.s,k))+'</span> <b>'+escapeHtml(e.c[k])+'</b>').join(' · ');
+    return '<div class="sch-row'+(attended.has(e.d)?' seen':'')+'">'
+      +'<div class="sch-dt"><b>'+escapeHtml(e.d)+'</b> <span class="vday">('+dowKR(e.d)+') '+escapeHtml(e.t||'')+'</span>'+(attended.has(e.d)?'<span class="seen-badge">관극</span>':'')+'</div>'
+      +'<div><span class="badge '+(ed?ed.id:'')+'">'+escapeHtml(ed?ed.name:'')+'</span> <span class="badge">'+escapeHtml(s?s.name:'')+'</span></div>'
+      +'<div class="sch-cast">'+cast+'</div></div>';
+  }).join('')+'</div>';
+}
+function schedActorHtml(entries){
+  const stat={};
+  entries.forEach(e=>orderedCastKeys(e.c).forEach(k=>splitSwap(e.c[k]).forEach(a=>{ if(!stat[a])stat[a]={n:0,roles:{}}; stat[a].n++; stat[a].roles[k]=(stat[a].roles[k]||0)+1; })));
+  let arr=Object.keys(stat).map(name=>({name,n:stat[name].n,roles:stat[name].roles}));
+  if(schedQ){ const q=schedQ.toLowerCase(); arr=arr.filter(a=>a.name.toLowerCase().includes(q)); }
+  arr.sort((a,b)=>b.n-a.n||a.name.localeCompare(b.name,'ko'));
+  if(!arr.length) return '<div class="empty">배우가 없습니다.</div>';
+  return '<div class="sch-count">'+arr.length+'명 · 이름을 누르면 그 배우 출연 회차만</div><div class="actor-list">'+arr.map(a=>{
+    const roles=Object.entries(a.roles).sort((x,y)=>y[1]-x[1]).map(r=>escapeHtml(castKeyCanonLabel(r[0]))+' '+r[1]).join(' · ');
+    return '<div class="actor-item" data-schactor="'+escapeHtml(a.name)+'"><span class="ac">'+a.n+'</span><div class="an">'+escapeHtml(a.name)+'</div><div class="am">'+roles+'</div></div>';
+  }).join('')+'</div>';
+}
+function schedRoleHtml(entries){
+  const keyCounts={}, keySet=new Set();
+  entries.forEach(e=>orderedCastKeys(e.c).forEach(k=>{ keySet.add(k); const m=(keyCounts[k]=keyCounts[k]||{}); splitSwap(e.c[k]).forEach(a=>m[a]=(m[a]||0)+1); }));
+  const order=[...keySet].sort((a,b)=>{const ia=CAST_KEY_ORDER.indexOf(a),ib=CAST_KEY_ORDER.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib);});
+  if(!order.length) return '<div class="empty">데이터가 없습니다.</div>';
+  return '<div class="stat-grid">'+order.map(k=>{
+    const arr=Object.entries(keyCounts[k]).sort((a,b)=>b[1]-a[1]); const mx=Math.max(1,...arr.map(x=>x[1]));
+    return '<div class="card"><h3 class="sub" style="margin-top:0">'+escapeHtml(castKeyCanonLabel(k))+' <span style="color:var(--ink-faint);font-size:12px">'+arr.length+'명</span></h3>'+arr.map(x=>barRow(x[0],x[1],mx)).join('')+'</div>';
+  }).join('')+'</div>';
+}
+
+/* ============================================================
+   Settings
+   ============================================================ */
+function renderSettings(){
+  const body=$('#settings-body');
+  body.innerHTML=
+    '<div class="card set-block"><h2 class="sec">데이터 백업</h2>'
+      +'<div class="row-actions">'
+      +'<button class="btn" id="set-export-json">JSON 내보내기</button>'
+      +'<button class="btn" id="set-import-json">JSON 불러오기</button>'
+      +'<button class="btn" id="set-export-csv">CSV 내보내기</button>'
+      +'<button class="btn" id="set-import-xlsx">엑셀 가져오기</button>'
+      +'</div><div class="hint">JSON = 전체 백업/복원 · CSV/엑셀 = 관극 목록 표. 로컬 데이터는 이 브라우저에만 저장되니 주기적으로 내보내세요.</div></div>'
+    +'<div class="card set-block"><h2 class="sec">배역 관리</h2><div class="editor-list" id="role-editor"></div>'
+      +'<div class="row-actions"><button class="btn btn-sm" id="role-add">＋ 배역 추가</button></div>'
+      +'<div class="hint">각 배역의 배우 풀은 관극을 기록하면 자동으로 늘어납니다.</div></div>'
+    +'<div class="card set-block"><h2 class="sec">시즌 캐스트 편집</h2>'
+      +'<label class="fld"><span class="lbl">시즌 선택</span><select id="season-pick"><option value="">— 선택 —</option>'
+      +state.seasons.map(s=>{ const e=editionById(s.editionId); return '<option value="'+s.id+'">'+escapeHtml((e?e.name:'')+' '+s.name+' ('+(s.start||'').slice(0,4)+')')+'</option>'; }).join('')
+      +'</select></label><div id="season-cast-editor"></div></div>'
+    +'<div class="card set-block"><h2 class="sec">동기화</h2><div class="hint" id="sync-info"></div>'
+      +(SUPABASE_ENABLED?'<div class="row-actions"><button class="btn btn-sm" id="set-signout">로그아웃</button><button class="btn btn-sm" id="set-forcesync">지금 동기화</button></div>':'')
+      +'</div>';
+
+  // backup handlers
+  $('#set-export-json').onclick=exportJSON;
+  $('#set-import-json').onclick=importJSON;
+  $('#set-export-csv').onclick=exportCSV;
+  $('#set-import-xlsx').onclick=importXLSX;
+
+  // role editor
+  renderRoleEditor();
+  $('#role-add').onclick=()=>{ const name=prompt('새 배역 이름 (예: 멀티플레이어)'); if(!name) return; const id='role_'+uid4();
+    state.roles.push({id,name,nameEn:'',sortIdx:state.roles.length,actors:[]}); saveState(); queueConfig(); renderRoleEditor(); fillViewingFilters(); toast('배역 추가됨'); };
+
+  // season cast editor
+  $('#season-pick').onchange=()=>renderSeasonCastEditor($('#season-pick').value);
+
+  // sync info
+  const si=$('#sync-info');
+  if(!SUPABASE_ENABLED){ si.innerHTML='로컬 전용 모드입니다. 클라우드 동기화를 쓰려면 파일 상단의 <b>SUPABASE_URL / SUPABASE_ANON_KEY</b> 를 입력하고 스키마 SQL을 실행하세요.'; }
+  else { si.innerHTML=(currentUser?('로그인: <b>'+escapeHtml(currentUser.email||'')+'</b>'):'로그아웃 상태')+' · 대기중 업로드: '+(pushQ.viewings.size+pushQ.delViewings.size+(pushQ.config?1:0)+(pushQ.settings?1:0)); }
+  if($('#set-signout')) $('#set-signout').onclick=()=>sb.auth.signOut().then(()=>location.reload());
+  if($('#set-forcesync')) $('#set-forcesync').onclick=()=>{ flushPush(); toast('동기화 시도'); };
+}
+function renderRoleEditor(){
+  $('#role-editor').innerHTML=state.roles.slice().sort((a,b)=>a.sortIdx-b.sortIdx).map((r,i)=>
+    '<div class="editrow" data-rid="'+r.id+'"><input value="'+escapeHtml(r.name)+'" data-rolename="'+r.id+'">'
+    +'<button class="mv" data-up="'+r.id+'">▲</button><button class="mv" data-down="'+r.id+'">▼</button>'
+    +'<button class="mv" data-del="'+r.id+'" style="color:var(--blood-bright)">삭제</button></div>').join('');
+  $$('#role-editor input[data-rolename]').forEach(inp=>inp.onchange=()=>{ const r=roleById(inp.dataset.rolename); if(r){ r.name=inp.value.trim()||r.name; saveState(); queueConfig(); fillViewingFilters(); } });
+  $$('#role-editor [data-up]').forEach(b=>b.onclick=()=>moveRole(b.dataset.up,-1));
+  $$('#role-editor [data-down]').forEach(b=>b.onclick=()=>moveRole(b.dataset.down,1));
+  $$('#role-editor [data-del]').forEach(b=>b.onclick=()=>{ if(state.roles.length<=1){toast('최소 1개 배역 필요');return;} if(!confirm('배역 삭제? 기존 기록의 해당 캐스팅 표시가 사라질 수 있습니다.'))return;
+    state.roles=state.roles.filter(r=>r.id!==b.dataset.del); state.roles.forEach((r,i)=>r.sortIdx=i); saveState(); queueConfig(); renderRoleEditor(); fillViewingFilters(); });
+}
+function moveRole(id,dir){ const sorted=state.roles.slice().sort((a,b)=>a.sortIdx-b.sortIdx); const i=sorted.findIndex(r=>r.id===id); const j=i+dir;
+  if(j<0||j>=sorted.length) return; [sorted[i].sortIdx,sorted[j].sortIdx]=[sorted[j].sortIdx,sorted[i].sortIdx]; saveState(); queueConfig(); renderRoleEditor(); }
+function renderSeasonCastEditor(sid){
+  const box=$('#season-cast-editor'); const s=seasonById(sid); if(!s){ box.innerHTML=''; return; }
+  if(!s.casts) s.casts={}; if(!s.positions) s.positions=[];
+  let h=state.roles.slice().sort((a,b)=>a.sortIdx-b.sortIdx).map(r=>
+    '<label class="fld"><span class="lbl">'+escapeHtml(r.name)+' (쉼표로 구분)</span>'
+    +'<input type="text" value="'+escapeHtml((s.casts[r.id]||[]).join(', '))+'" data-sc="'+r.id+'"></label>').join('');
+  if(s.positions.length) h+='<div class="hint" style="margin:2px 0 8px">플레이어 포지션</div>'
+    +s.positions.map((p,i)=>'<label class="fld"><span class="lbl">'+escapeHtml(p.label)+' (쉼표로 구분)</span>'
+      +'<input type="text" value="'+escapeHtml((p.cast||[]).join(', '))+'" data-scp="'+i+'"></label>').join('');
+  h+='<label class="fld"><span class="lbl">극장</span><input type="text" value="'+escapeHtml(s.theater||'')+'" id="sc-theater"></label>'
+    +'<label class="fld"><span class="lbl">비고</span><input type="text" value="'+escapeHtml(s.note||'')+'" id="sc-note"></label>'
+    +'<div class="row-actions"><button class="btn btn-primary btn-sm" id="sc-save">저장</button></div>';
+  box.innerHTML=h;
+  $('#sc-save').onclick=()=>{
+    state.roles.forEach(r=>{ const inp=$('#season-cast-editor [data-sc="'+r.id+'"]'); const names=inp.value.split(',').map(x=>x.trim()).filter(Boolean); if(names.length) s.casts[r.id]=names; else delete s.casts[r.id]; });
+    s.positions.forEach((p,i)=>{ const inp=$('#season-cast-editor [data-scp="'+i+'"]'); if(inp) p.cast=inp.value.split(',').map(x=>x.trim()).filter(Boolean); });
+    s.theater=$('#sc-theater').value.trim(); s.note=$('#sc-note').value.trim();
+    state.roles.forEach(r=>{ (s.casts[r.id]||[]).forEach(n=>{ if(!r.actors.includes(n)) r.actors.push(n); }); r.actors.sort((a,b)=>a.localeCompare(b,'ko')); });
+    saveState(); queueConfig(); refreshDatalists(); toast('시즌 캐스트 저장됨');
+  };
+}
+
+/* ---------- Export / Import ---------- */
+function download(name,text,type){ const blob=new Blob([text],{type:type||'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
+function exportJSON(){ download('midnight_backup_'+todayISO()+'.json', JSON.stringify(state,null,2)); toast('JSON 내보내기 완료'); }
+function importJSON(){ const inp=document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
+  inp.onchange=()=>{ const f=inp.files[0]; if(!f) return; const fr=new FileReader(); fr.onload=()=>{ try{ const s=JSON.parse(fr.result);
+    if(!confirm('현재 데이터를 불러온 백업으로 대체할까요?')) return; state=migrate(s); mergeSeed(); saveState();
+    if(SUPABASE_ENABLED&&currentUser){ state.viewings.forEach(v=>queueViewing(v.id)); queueConfig(); queueSettings(); }
+    renderAll(); toast('불러오기 완료'); }catch(e){ toast('불러오기 실패: '+e.message); } }; fr.readAsText(f); };
+  inp.click();
+}
+function csvCell(s){ s=String(s==null?'':s); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
+function exportCSV(){
+  const castCols=castingColumns();
+  const cols=['date','session','edition','season','theater','seat'].concat(castCols.map(c=>c.name)).concat(RATING_AXES.map(a=>a.name)).concat(['평균','price','oneLiner','review','sightline']);
+  const rows=state.viewings.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')).map(v=>{
+    const e=editionById(v.editionId), s=seasonById(v.seasonId), avg=ratingAvg(v.ratings);
+    return [v.date,v.session,e?e.name:'',s?s.name:'',v.theater,v.seat]
+      .concat(castCols.map(c=>(v.casting&&v.casting[c.key])||''))
+      .concat(RATING_AXES.map(a=>(v.ratings&&v.ratings[a.key])||''))
+      .concat([avg?avg.toFixed(1):'',v.price,v.oneLiner,v.review,v.sightline]).map(csvCell).join(',');
+  });
+  download('midnight_viewings_'+todayISO()+'.csv', '﻿'+cols.map(csvCell).join(',')+'\n'+rows.join('\n'), 'text/csv');
+  toast('CSV 내보내기 완료');
+}
+function importXLSX(){ const inp=document.createElement('input'); inp.type='file'; inp.accept='.xlsx,.xls,.csv';
+  inp.onchange=()=>{ const f=inp.files[0]; if(!f) return; const fr=new FileReader();
+    fr.onload=()=>{ try{ const wb=XLSX.read(fr.result,{type:'array'}); const ws=wb.Sheets[wb.SheetNames[0]]; const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      let n=0; rows.forEach(row=>{ const date=String(row.date||row['관극일']||'').slice(0,10); if(!date) return;
+        const session=row.session||row['회차']||''; const id='v_'+date.replace(/-/g,'')+'_'+(session==='마티네'?'m':session==='이브닝'?'e':'x')+'_'+uid4();
+        const casting={}; castingColumns().forEach(c=>{ if(row[c.name]) casting[c.key]=String(row[c.name]); });
+        const ratings={}; RATING_AXES.forEach(a=>{ const val=Number(row[a.name]); if(val>0) ratings[a.key]=val; });
+        const ed=state.editions.find(e=>e.name===row.edition||e.name===row['버전']);
+        const v={id,date,session,timeText:'',editionId:ed?ed.id:'',seasonId:'',theater:row.theater||row['극장']||'',seat:row.seat||row['좌석']||'',casting,ratings,oneLiner:row.oneLiner||row['한줄평']||'',review:row.review||row['관람후기']||'',price:Number(row.price||row['가격'])||'',sightline:row.sightline||row['관크']||'',images:[],needsReview:true,createdAt:Date.now(),updatedAt:Date.now(),source:'user'};
+        const inf=inferSeason(date,v.editionId); if(inf) v.seasonId=inf.id;
+        absorbActors(v); state.viewings.push(v); queueViewing(id); n++; });
+      saveState(); queueConfig(); renderAll(); toast(n+'건 가져오기 완료 (검수 필요로 표시됨)');
+    }catch(e){ console.error(e); toast('가져오기 실패: '+e.message); } };
+    fr.readAsArrayBuffer(f); };
+  inp.click();
+}
+
+/* ============================================================
+   Tabs + render
+   ============================================================ */
+function switchTab(page){
+  $$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===page));
+  $$('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+page));
+  if(page==='viewings') renderViewings();
+  if(page==='stats') renderStats();
+  if(page==='actors') renderActors();
+  if(page==='timeline') renderTimeline();
+  if(page==='schedule') renderSchedule();
+  if(page==='settings') renderSettings();
+  try{ location.hash=page; }catch(e){}
+}
+function updateCounter(){ $('#totalCount').textContent=state.viewings.length; }
+function renderAll(){
+  updateCounter(); fillEditionSelects(); fillViewingFilters(); refreshDatalists(); refreshExistingSelect();
+  const active=($$('.tab.active')[0]||{}).dataset; const page=active?active.page:'record';
+  if(page==='viewings') renderViewings();
+  else if(page==='stats') renderStats();
+  else if(page==='actors') renderActors();
+  else if(page==='timeline') renderTimeline();
+  else if(page==='schedule') renderSchedule();
+  else if(page==='settings') renderSettings();
+}
+
+/* ============================================================
+   Wiring + boot
+   ============================================================ */
+function wireEvents(){
+  $$('.tab').forEach(t=>t.onclick=()=>switchTab(t.dataset.page));
+  $('#f-date').onchange=onEditionOrDateChange;
+  $('#f-edition').onchange=onEditionOrDateChange;
+  $('#f-season').onchange=onSeasonChange;
+  $('#f-theater').oninput=()=>{ theaterTouched=true; };
+  $('#f-existing').onchange=()=>{ const id=$('#f-existing').value; if(id) loadIntoForm(id); else clearForm(); };
+  $('#f-save').onclick=saveViewing;
+  $('#f-clear').onclick=clearForm;
+  $('#f-delete').onclick=()=>{ if(editingId) deleteViewing(editingId); };
+  $('#f-images').onchange=async()=>{ const files=[...$('#f-images').files]; $('#f-images').value='';
+    for(const f of files){ try{ const c=await compressImage(f); c.kind='ticket'; pendingImages.push(c); }catch(e){ toast('이미지 처리 실패'); } } renderImageStrip(); };
+
+  // viewings controls
+  $('#v-search').oninput=debounce(()=>{ viewFilter.search=$('#v-search').value.trim(); renderViewings(); },200);
+  $('#v-edition').onchange=()=>{ viewFilter.edition=$('#v-edition').value; renderViewings(); };
+  $('#v-season').onchange=()=>{ viewFilter.season=$('#v-season').value; renderViewings(); };
+  $('#v-sort').onchange=()=>{ viewFilter.sort=$('#v-sort').value; renderViewings(); };
+  $('#v-calbtn').onclick=()=>{ const c=$('#v-calendar'); const show=c.style.display==='none'; c.style.display=show?'block':'none'; $('#v-calbtn').textContent=show?'달력 닫기':'달력 보기'; if(show) renderCalendar(); };
+  $('#v-nrbtn').onclick=()=>{ viewFilter.needsOnly=!viewFilter.needsOnly; $('#v-nrbtn').classList.toggle('btn-primary',viewFilter.needsOnly); renderViewings(); };
+
+  // actors
+  $('#a-search').oninput=debounce(()=>{ actorSearch=$('#a-search').value.trim(); renderActors(); },200);
+  $('#a-role').onchange=()=>{ actorRoleFilter=$('#a-role').value; renderActors(); };
+
+  // auth
+  $('#au-submit').onclick=doAuth;
+  $('#au-pw').onkeydown=e=>{ if(e.key==='Enter') doAuth(); };
+  $('#au-toggle').onclick=()=>{ authMode=authMode==='signin'?'signup':'signin'; $('#au-submit').textContent=authMode==='signin'?'로그인':'회원가입';
+    $('#au-toggle').innerHTML=authMode==='signin'?'계정이 없으신가요? <a>회원가입</a>':'이미 계정이 있으신가요? <a>로그인</a>'; $('#au-err').textContent=''; };
+  $('#signOutLink').onclick=()=>{ if(sb) sb.auth.signOut().then(()=>location.reload()); };
+  $('#au-local').onclick=()=>{ localMode=true; hideAuth(); updateUserChip(); renderAll(); };
+
+  // modal
+  $('#detailModal').onclick=e=>{ if(e.target.id==='detailModal') closeDetail(); };
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDetail(); });
+
+  // flush on leave
+  window.addEventListener('pagehide',()=>{ if(sb&&currentUser) flushPush(); });
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'&&sb&&currentUser) flushPush(); });
+}
+
+function boot(){
+  state=loadState(); mergeSeed(); saveState();
+  clearForm();
+  wireEvents();
+  updateUserChip();
+  // initial tab from hash
+  const h=(location.hash||'').replace('#','');
+  if(['record','viewings','stats','actors','timeline','schedule','settings'].includes(h)) switchTab(h); else renderAll();
+
+  if(SUPABASE_ENABLED){
+    setSync('syncing');
+    // onAuthStateChange 는 동기 콜백 유지 (내부에서 sb.auth.* await 금지)
+    sb.auth.onAuthStateChange((event,session)=>{ initSession(session).catch(err=>console.error(err)); });
+  }
+}
+boot();
+</script>
+</body>
+</html>
